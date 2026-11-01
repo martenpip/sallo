@@ -1027,7 +1027,7 @@ function uid() {
 const nowIso = () => new Date().toISOString();
 
 const DEFAULT_SETTINGS = () => ({
-  currency: 'EUR', locale: '', weekStart: 1, monthStart: 1, theme: 'system', sound: true, nudges: true, guard: true, wantsLimit: 30, demo: false, pay: null, plan: null, workPay: null, household: null, orientation: 'auto',
+  currency: 'EUR', locale: '', lang: 'en', weekStart: 1, monthStart: 1, theme: 'system', sound: true, nudges: true, guard: true, wantsLimit: 30, demo: false, pay: null, plan: null, workPay: null, household: null, orientation: 'auto',
   onboarded: false, hideAmounts: false, lastExportAt: null, createdAt: nowIso(),
 });
 
@@ -1513,20 +1513,1291 @@ __exports.repairReferences = repairReferences;
 __exports.mergeData = mergeData;
 __exports.transactionsCsv = transactionsCsv;
 });
+__def("lang-et.js", function (__exports) {
+// Estonian wording. Generated from i18n/et.tsv by tools/gen-lang.mjs: edit the .tsv, not this file.
+const ET = {"This screen couldn’t be shown. Your data is safe.":"Seda vaadet ei saanud kuvada. Sinu andmed on turvas.",
+"Back to overview":"Tagasi ülevaatesse",
+"Sallo couldn’t start":"Sallo ei käivitunud",
+"Add a transaction":"Lisa tehing",
+"In":"Sisse",
+"Out":"Välja",
+"Net":"Neto",
+"Search description, category, account":"Otsi kirjeldust, kategooriat, kontot",
+"Search transactions":"Otsi tehinguid",
+"Filter":"Filter",
+"Add transaction":"Lisa tehing",
+"{0} Yes, you can afford it":"{0} Jah, sul on selleks raha",
+"{1} balance stays above zero for the next 45 days, and your goal savings ({2}) are untouched. The lowest you’d be is":"{1} saldo püsib järgmised 45 päeva nullist kõrgemal ja sinu eesmärkide säästud ({2}) jäävad puutumata. Madalaim saldo oleks",
+"Waiting until":"Kui ootad kuni",
+"would leave more room.":"jääks rohkem ruumi.",
+"{0} Possible, but it would be tight":"{0} Võimalik, aga napilt",
+"You could pay for it, but the lowest you’d be is only":"Sa saaksid selle maksta, aga madalaim saldo oleks vaid",
+", less than a week of your essential bills (about {2}).{3}":", vähem kui nädala olulisemate arvete summa (umbes {2}).{3}",
+"The first day it would work is":"Esimene päev, mil see õnnestuks, on",
+"{0} Not right now":"{0} Praegu mitte",
+"Check":"Kontrolli",
+"Add an account first, so Sallo knows your balance.":"Lisa esmalt konto, et Sallo teaks sinu saldot.",
+"Set aside for goals, kept out of reach:":"Eesmärkideks kõrvale pandud, puutumata:",
+"{0} Add it to Upcoming":"{0} Lisa tulevaste hulka",
+"The numbers":"Arvud",
+"Lowest balance in that time without it:":"Madalaim saldo selle aja jooksul ilma selleta:",
+"Lowest with it:":"Madalaim saldo sellega:",
+"An estimate from what you’ve planned. Unplanned spending and late payments aren’t included{4}.":"Hinnang sinu planeeritu põhjal. Planeerimata kulutusi ja hilinenud makseid ei arvestata{4}.",
+"{5} Save up for it as a goal":"{5} Kogu selleks eesmärgi alla",
+"Type what you’re thinking of buying. Sallo checks it against your balance, your planned bills and your income over the next 45 days. It doesn’t save anything unless you choose to.":"Kirjuta, mida soovid osta. Sallo kontrollib seda sinu saldo, planeeritud arvete ja sissetulekuga järgmise 45 päeva jooksul. Midagi ei salvestata, kui sa seda ise ei vali.",
+"Add an account first, then come back to import its statement.":"Lisa esmalt konto ja tule siis väljavõtet importima.",
+"Download a statement as a CSV file from your bank’s website or app, then choose it here. Sallo reads it on this device. Nothing is uploaded anywhere.":"Laadi pangast (selle veebilehelt või rakendusest) alla CSV-failina väljavõte ja vali see siin. Sallo loeb seda sinu seadmes. Midagi ei laadita kuhugi üles.",
+"Works with most banks, including statements with semicolons, commas as decimals, and separate in/out columns. If something looks wrong you can fix it before anything is saved.":"Töötab enamiku pankadega, sh semikoolonite, komakohtade ning eraldi sisse-/väljakolonnidega väljavõtetega. Kui midagi tundub valesti, saad selle enne salvestamist parandada.",
+"Import the {1} that look already added":"Impordi {1}, mis paistavad juba lisatud olevat",
+"Same day, amount and description as something you have. Off by default so nothing is counted twice.":"Sama päev, summa ja kirjeldus nagu mõnel olemasoleval. Vaikimisi väljas, et midagi ei loetaks topelt.",
+"to import{1}{2}. Check the categories, you can change them here.":"importimiseks{1}{2}. Kontrolli kategooriaid, siin saad neid muuta.",
+"Import {6} transaction{7}":"Impordi {6} tehing{7?ut}",
+"Category for {5}":"Kategooria: {5}",
+"…and {0} more. They are imported too; you can change categories later in Activity.":"…ja veel {0}. Needki imporditakse; kategooriaid saad hiljem Tegevuses muuta.",
+"Sallo couldn’t read any transactions with these settings. Check the date and amount columns above.":"Sallo ei suutnud nende seadetega ühtegi tehingut lugeda. Kontrolli ülalt kuupäeva- ja summaveerge.",
+"Which column is what?":"Mis veerg on mis?",
+"Sallo guessed from the file. Change anything that looks off.":"Sallo pakkus faili põhjal. Muuda kõike, mis tundub vale.",
+"Date order":"Kuupäeva järjekord",
+"Decimal mark":"Kümnendkoha märk",
+"Swap in and out":"Vaheta sisse ja välja",
+"Turn on if your spending shows as money in.":"Lülita sisse, kui sinu kulutused näivad rahana sisse tulevat.",
+"Into which account?":"Millisesse kontosse?",
+"Account":"Konto",
+"Preview":"Eelvaade",
+"Work day":"Tööpäev",
+"Today":"Täna",
+"Previous month":"Eelmine kuu",
+"Next month":"Järgmine kuu",
+"Transactions":"Tehingud",
+"Planned":"Planeeritud",
+"Events{8}":"Sündmused{8}",
+"Selected day":"Valitud päev",
+"{13} Add event":"{13} Lisa sündmus",
+"{15} Add payment":"{15} Lisa makse",
+"The file is locked with a passphrase you choose. Without it, nobody can read the file, including you. Write it down somewhere safe.":"Fail on lukustatud sinu valitud paroolifraasiga. Ilma selleta ei saa faili keegi lugeda, ka sina mitte. Kirjuta see kuhugi turvalisse kohta üles.",
+"Cancel":"Tühista",
+"Save encrypted file":"Salvesta krüptitud fail",
+"Enter the passphrase you chose when you made this backup.":"Sisesta paroolifraas, mille valisid selle varukoopia tegemisel.",
+"Unlock":"Ava",
+"{0} damaged or inconsistent entr{1} skipped.":"{0} kahjustatud või vastuoluline kirje jäeti vahele.",
+"What should happen to what’s on this device?":"Mis peaks juhtuma sellega, mis on selles seadmes?",
+"Replace everything":"Asenda kõik",
+"This device will match the backup exactly.":"See seade hakkab varukoopiaga täpselt kokku langema.",
+"Combine":"Ühenda",
+"Add what’s missing. If both have the same item, the most recently edited one is kept. Things you deleted elsewhere come back.":"Lisa puuduv. Kui mõlemal on sama kirje, jäetakse alles hiljem muudetud. Mujal kustutatud asjad tulevad tagasi.",
+"This backup contains":"See varukoopia sisaldab",
+"account{1},":"konto{1?t},",
+"transaction{3},":"tehing{3?ut},",
+"recurring item{5},":"korduv{5?at} kirje{5?t},",
+"goal{7} and":"eesmärk{7?i} ja",
+"budget{9}.":"eelarve{9?t}.",
+"Import":"Impordi",
+"{8} total":"{8} kokku",
+"Nothing left to pay":"Maksta pole enam midagi",
+"Every debt here is cleared. Nicely done.":"Kõik siinsed võlad on kustutatud. Tubli töö.",
+"Paid off":"Tasutud",
+"Add one":"Lisa üks",
+"Add a debt or loan":"Lisa võlg või laen",
+"History":"Ajalugu",
+"{2} cleared{3}{4}.":"{2} kustutatud{3}{4}.",
+"This one is finished, so it can’t take any more payments. It stays here as a record of what you achieved.":"See on lõpetatud, seega ei saa sinna enam makseid lisada. See jääb siia sinu saavutuse märgiks.",
+"{6} Remove from list":"{6} Eemalda loendist",
+"{0} a month{1}":"{0} kuus{1}",
+"of {2} · {3}% {4}":"{2}-st · {3}% {4}",
+"{0} This payment doesn’t cover the interest":"{0} See makse ei kata intressi",
+"{1} a month is less than the interest that builds up, so the balance would never go down. Try a higher monthly payment.":"{1} kuus on vähem kui kogunev intress, seega jääk ei väheneks kunagi. Proovi suuremat kuumakset.",
+"Paying":"Maksmine",
+"instead would finish":"asemel lõpetaks",
+"sooner{2}.":"kiiremini{2}.",
+"{0} {1} around {2}":"{0} {1} umbes {2}",
+"At {3} a month that’s about":"Kuumaksega {3} on see umbes",
+"An estimate: it assumes you pay on time every month and the rate stays the same.":"Hinnang: eeldab, et maksad iga kuu õigel ajal ja intressimäär ei muutu.",
+"Set a monthly payment to see how long this will take.":"Määra kuumakse, et näha, kui kaua see võtab.",
+"{2} {3}{4}. That’s real progress, well done.":"{2} {3}{4}. See on tõeline edasiminek, tubli!",
+"It stays in your list as paid off, and its monthly reminders are switched off.":"See jääb sinu loendisse tasutuna ja selle kuised meeldetuletused lülitatakse välja.",
+"Thank you":"Aitäh",
+"Who owes who?":"Kes kellele võlgneb?",
+"Also add it to Activity":"Lisa see ka Tegevusse",
+"Moves your account balance. {4}":"Muudab sinu konto saldot. {4}",
+"Use this when the balance grows: interest your lender added, a fee, or you borrowed more. It doesn’t move any account money.":"Kasuta, kui jääk kasvab: laenuandja lisatud intress, tasu või laenasid juurde. See ei liiguta konto raha.",
+"Shared with {1}":"Jagatud: {1}",
+"Counts in your shared household budget and bill split.":"Arvestatakse ühises majapidamise eelarves ja arvete jagamises.",
+"Add again with one tap":"Lisa uuesti ühe puudutusega",
+"Same as before? Tap to add again today":"Sama mis enne? Puuduta ja lisa täna uuesti",
+"{0} Part of a series ({1}). Changes here affect":"{0} Osa sarjast ({1}). Muudatused siin mõjutavad",
+"this date only":"ainult seda kuupäeva",
+"Edit the whole series":"Muuda kogu seeriat",
+"Pick several specific days":"Vali mitu kindlat päeva",
+"For pay by the day, or anything on a few chosen dates. Choose the days and set the amount for each.":"Päevatasu või mõne valitud kuupäeva jaoks. Vali päevad ja määra igaühe summa.",
+"Repeat":"Kordus",
+"Monthly on the 31st becomes the last day of shorter months, then returns to the 31st.":"Kuus 31. kuupäeval muutub lühemate kuude puhul kuu viimaseks päevaks, siis taas 31.-ks.",
+"Category":"Kategooria",
+"Repeats":"Kordub",
+"Notes":"Märkmed",
+"Undo — back to upcoming":"Võta tagasi — tagasi tulevaste hulka",
+"Restore this date":"Taasta see kuupäev",
+"Skip this date":"Jäta see kuupäev vahele",
+"{1} Edit the series":"{1} Muuda seeriat",
+"Stop series after this date":"Lõpeta seeria pärast seda kuupäeva",
+"Date":"Kuupäev",
+"{14} Edit{15}":"{14} Muuda{15}",
+"{1}. Change the amount if the real one was different.":"{1}. Muuda summat, kui tegelik oli teine.",
+"Updates every upcoming date that you haven’t edited yourself. Dates you changed or skipped are kept as they are.":"Uuendab kõiki tulevasi kuupäevi, mida sa ise pole muutnud. Sinu muudetud või vahelejäetud kuupäevad jäävad nii, nagu need on.",
+"Restore":"Taasta",
+"{1} Delete account for good":"{1} Kustuta konto lõplikult",
+"Erases the account and everything done in it. Archive hides it and keeps the history.":"Kustutab konto ja kõik selles tehtu. Arhiveerimine peidab selle ja jätab ajaloo alles.",
+"and everything done in it will be erased from Sallo: {1}.{2}":"ja kõik selles tehtu kustutatakse Sallost: {1}.{2}",
+"This can’t be undone.":"Seda ei saa tagasi võtta.",
+"You can only get this information back if you’ve saved a backup on your phone or another device.":"Seda infot saad tagasi vaid siis, kui oled varukoopia salvestanud telefoni või teise seadmesse.",
+"Make a backup first":"Tee esmalt varukoopia",
+"Priority expense":"Prioriteetne kulu",
+"Needs like rent, utilities, food and health. Sallo warns you if other spending crowds these out.":"Vajadused nagu üür, kommunaalid, toit ja tervis. Sallo hoiatab, kui muud kulutused neid välja tõrjuvad.",
+"Icon":"Ikoon",
+"This is a note to yourself. It doesn’t move money between your accounts.":"See on märge iseendale. See ei liiguta raha sinu kontode vahel.",
+"Resets every period (month). Overspending is shown, never blocked.":"Lähtestub iga perioodi (kuu) alguses. Ületarbimist näidatakse, kunagi ei blokeerita.",
+"{3} of {4}":"{3} / {4}",
+"Amount for {7}":"Summa: {7}",
+"just came in{3}. Choose what to set aside for your goals. It’s a note to yourself and doesn’t move money between accounts.":"just laekus{3}. Vali, mida eesmärkideks kõrvale panna. See on märge iseendale ega liiguta raha kontode vahel.",
+"Not now":"Mitte praegu",
+"Put aside":"Pane kõrvale",
+"Amount on {1}":"Summa kuupäeval {1}",
+"{1} day{2}{3}":"{1} päev{2}{3}",
+"Tap the days on the calendar.":"Puuduta kalendris päevi.",
+"Choose days":"Vali päevad",
+"Mon–Fri, from today":"E–R, alates tänasest",
+"Clear":"Tühjenda",
+"Your balance doesn’t fully cover the essential bills due in the next 30 days. You’re about":"Sinu saldo ei kata täielikult järgmise 30 päeva olulisi arveid. Sul jääb puudu umbes",
+"short. Holding off on non-essentials would help.":". Mitte-hädavajalike kulutuste vältimine aitaks.",
+"Only":"Alles jääks vaid",
+"would be left after the essential bills due in the next 30 days. Worth going easy on non-essentials.":"pärast järgmise 30 päeva olulisi arveid. Tasub mitte-hädavajalikega ettevaatlik olla.",
+"Non-essentials are":"Mitte-hädavajalikud on",
+"of what you earned this period, above your comfortable {1}%.":"sellest, mida sel perioodil teenisid, ületades sinu mugavat piiri ({1}%).",
+"You’ve spent more on non-essentials than on essentials this period.":"Sa oled sel perioodil mitte-hädavajalikele kulutanud rohkem kui hädavajalikele.",
+"Names, split and budget":"Nimed, jaotus ja eelarve",
+"A budget for two":"Eelarve kahele",
+"Each of you keeps your own Sallo on your own phone, with your own private accounts. You mark some expenses as":"Kumbki teist kasutab oma Sallot oma telefonis, oma privaatsete kontodega. Sa märgid mõned kulud",
+"shared":"jagatuks",
+", send each other a small file now and then, and Sallo shows the household total, who paid what, and who owes whom.":", saadate üksteisele aeg-ajalt väikese faili ja Sallo näitab majapidamise kogusummat, kes mille eest maksis ja kes kellele võlgneb.",
+"Nothing goes through a server. Only expenses you tick as shared are in the file.":"Midagi ei liigu läbi serveri. Failis on ainult kulud, mille oled jagatuks märkinud.",
+"Set it up":"Seadista",
+"Already got a file from your partner?":"Kas oled partnerilt faili saanud?",
+"Import it":"Impordi see",
+"and Sallo sets this up for you.":"ja Sallo seadistab selle sinu eest.",
+"No shared budget set.":"Jagatud eelarvet pole määratud.",
+"What it went on":"Mille peale see läks",
+"Spent together":"Koos kulutatud",
+"Who paid, who owes":"Kes maksis, kes võlgneb",
+"{4} paid":"{4} maksis",
+"{6} paid":"{6} maksis",
+"Split":"Jaotus",
+"{13}’s fair share is {14} and {15}’s is {16}, {17}. This is for the month shown. Settle up however you like, it doesn’t move any money here.":"{13} õiglane osa on {14} ja {15} oma {16}, {17}. See kehtib kuvatud kuu kohta. Tasuge omavahel nii, nagu sobib, see ei liiguta siin raha.",
+"Shared expenses":"Jagatud kulud",
+"Keep in step":"Hoia sünkroonis",
+"Send {20} your shared expenses, and import theirs. Do it whenever you want fresh numbers, for example once a week.":"Saada {20} oma jagatud kulud ja impordi tema omad. Tee seda, kui soovid värskeid numbreid, näiteks kord nädalas.",
+"{21} Send my shared expenses":"{21} Saada minu jagatud kulud",
+"{22} Import {23}’s file":"{22} Impordi {23} fail",
+"The file contains only the expenses you ticked as shared, plus names, your split and the shared budget. Anyone who gets the file can read those, so send it only to {26}.":"Fail sisaldab ainult kulusid, mille jagatuks märkisid, pluss nimesid, sinu jaotust ja jagatud eelarvet. Kõik, kes faili saavad, saavad neid lugeda, seega saada see ainult: {26}.",
+"How do you split shared costs?":"Kuidas te jagatud kulusid jagate?",
+"Close":"Sulge",
+"Type {0} to continue":"Jätkamiseks kirjuta {0}",
+"Sallo is locked":"Sallo on lukus",
+"Passcode":"Pääsukood",
+"Forgot your passcode?":"Unustasid pääsukoodi?",
+"Your money.":"Sinu raha.",
+"Only on your device.":"Ainult sinu seadmes.",
+"No account, no sign-up, nothing sent anywhere.":"Ei mingit kontot, ei registreerimist, midagi ei saadeta kuhugi.",
+"Track spending, bills, savings goals and budgets.":"Jälgi kulutusi, arveid, säästueesmärke ja eelarveid.",
+"Move between phones with a backup file whenever you like.":"Liigu telefonide vahel varukoopiafailiga, millal tahes.",
+"Get started":"Alusta",
+"{1} Try it with example data":"{1} Proovi näidisandmetega",
+"{2} I have a backup to import":"{2} Mul on varukoopia importimiseks",
+"Set up your first account":"Seadista oma esimene konto",
+"You can change everything later, and add more accounts in Settings.":"Kõike saad hiljem muuta ja rohkem kontosid lisada Seadetes.",
+"Back":"Tagasi",
+"Continue":"Jätka",
+"Skip, I’ll add accounts later":"Jäta vahele, lisan kontod hiljem",
+"{3} due day":"{3} maksepäev",
+"Pay and regular bills":"Palk ja püsiarved",
+"Tell Sallo what comes in and goes out regularly and it will set up the reminders and repeat them for you. Skip anything that doesn’t apply. You can change it all later.":"Ütle Sallole, mis regulaarselt sisse ja välja liigub, ning see seadistab meeldetuletused ja kordab neid sinu eest. Jäta vahele kõik, mis ei kehti. Kõike saab hiljem muuta.",
+"Your pay":"Sinu palk",
+"Monthly bills":"Kuised arved",
+"Skip for now":"Jäta praegu vahele",
+"How do you want to live?":"Kuidas tahad elada?",
+"Pick a simple plan for your monthly money, like the popular 50/30/20 rule: needs, wants and savings. Or do your own thing. You can change it any time in Settings.":"Vali lihtne plaan oma kuuraha jaoks, näiteks populaarne 50/30/20 reegel: vajadused, soovid ja säästud. Või tee omamoodi. Saad seda igal ajal Seadetes muuta.",
+"You’re set":"Kõik valmis",
+"Activity":"Tegevus",
+"is where you add what you spend and earn.":"on koht, kuhu lisad oma kulud ja tulud.",
+"Money plan":"Rahaplaan",
+"shows how this month is going against your plan.":"näitab, kuidas sel kuul plaani suhtes läheb.",
+"Safe to spend":"Vaba kulutada",
+"on Overview shows what’s free after bills and savings.":"Ülevaates näitab, mis on pärast arveid ja säästusid vaba.",
+"Upcoming":"Tulemas",
+"keeps bills, salary and events, and repeats them for you.":"hoiab arveid, palka ja sündmusi ning kordab neid sinu eest.",
+"Add Sallo to your home screen to use it like an app. Settings has the steps.":"Lisa Sallo avaekraanile, et kasutada seda nagu rakendust. Sammud leiad Seadetest.",
+"Make a backup now and then. It’s the only copy of your data.":"Tee aeg-ajalt varukoopia. See on sinu andmete ainus koopia.",
+"Open Sallo":"Ava Sallo",
+"Total balance":"Kogusaldo",
+"Previous period":"Eelmine periood",
+"Next period":"Järgmine periood",
+"About {0} a day · {1} a week":"Umbes {0} päevas · {1} nädalas",
+"Can I afford something?":"Kas ma saan seda endale lubada?",
+"Next up":"Järgmisena",
+"{2} came in":"{2} laekus",
+"{4} of {5}":"{4} / {5}",
+"Subscriptions":"Tellimused",
+"a month across {1} regular {2}":"kuus {1} püsimakse kohta",
+"With {0}":"{0}-ga",
+"Highlights":"Esiletõstetu",
+"{0} so far this period":"{0} sel perioodil siiani",
+"Back up your data":"Tee oma andmetest varukoopia",
+"{1} Your data lives only on this device.":"{1} Sinu andmed asuvad ainult selles seadmes.",
+"Back up":"Tee koopia",
+"{1} overdue":"{1} üle tähtaja",
+"You’re looking at example data":"Sa vaatad näidisandmeid",
+"Nothing here is real. Start fresh when you’re ready.":"Siin pole midagi päris. Alusta uuesti, kui oled valmis.",
+"Start fresh":"Alusta uuesti",
+"Non-essentials are {0} percent of income; comfortable level is {1} percent":"Mitte-hädavajalikud on {0} protsenti sissetulekust; mugav tase on {1} protsenti",
+"{4}% of income":"{4}% sissetulekust",
+"comfortable: {5}%":"mugav: {5}%",
+"Biggest non-essentials":"Suurimad mitte-hädavajalikud",
+"Spending check":"Kulutuste kontroll",
+"How this works":"Kuidas see töötab",
+"Essentials are things like rent, utilities, groceries and health. You can change which categories count in Settings → Categories, or turn this off in Preferences.":"Hädavajalikud on näiteks üür, kommunaalid, toit ja tervis. Saad muuta, millised kategooriad arvesse lähevad, Seaded → Kategooriad, või selle Eelistustes välja lülitada.",
+"Recent activity":"Hiljutine tegevus",
+"Recent":"Hiljutised",
+"See all":"Vaata kõiki",
+"Nothing spent in this period yet. Add an expense and the chart fills in.":"Sel perioodil pole veel midagi kulutatud. Lisa kulu ja diagramm täitub.",
+"{0} free after {1} set aside for goals":"{0} vaba pärast {1} eesmärkideks kõrvale panemist",
+"No accounts yet.":"Kontosid veel pole.",
+"Add an account":"Lisa konto",
+"Expected balance at the end of this period:":"Eeldatav saldo selle perioodi lõpus:",
+", counting what’s still planned{1}.":", arvestades seda, mis on veel planeeritud{1}.",
+"Where it went":"Kuhu see läks",
+"More insights {1}":"Rohkem ülevaateid {1}",
+"No spending recorded in this period.":"Sel perioodil pole kulutusi registreeritud.",
+"{0} left":"{0} järel",
+"{1} of {2}":"{1} / {2}",
+"Budgets":"Eelarved",
+"All":"Kõik",
+"Nothing planned. Add bills, income or events in Upcoming.":"Midagi pole planeeritud. Lisa arveid, tulu või sündmusi vaates Tulemas.",
+"Savings goals":"Säästueesmärgid",
+"Savings":"Säästud",
+"Overview":"Ülevaade",
+"Settings":"Seaded",
+"Quick actions":"Kiirtoimingud",
+"Expense":"Kulu",
+"Income":"Tulu",
+"Transfer":"Ülekanne",
+"Can I afford":"Kas saan lubada",
+"Total balance and where it went":"Kogusaldo ja kuhu see läks",
+"Where your money went":"Kuhu sinu raha läks",
+"{22} · share of what you spent":"{22} · osakaal kulutatust",
+"This period":"See periood",
+"Spent":"Kulutatud",
+"Coming up":"Peatselt tulemas",
+"Fits your bills":"Sobib sinu arvetega",
+"Needs":"Vajadused",
+"Wants":"Soovid",
+"Your regular essential bills come to about":"Sinu püsivad olulised arved on umbes",
+"of your income. {2}":"sinu sissetulekust. {2}",
+"Needs %":"Vajadused %",
+"Wants %":"Soovid %",
+"Savings %":"Säästud %",
+"Needs are things like rent, utilities, groceries and health. Wants are everything else you choose to spend on.":"Vajadused on näiteks üür, kommunaalid, toit ja tervis. Soovid on kõik muu, mille peale otsustad kulutada.",
+"Target reached":"Eesmärk täidetud",
+"{0} Plan your month":"{0} Planeeri oma kuu",
+"Tell Sallo what you earn and how you want to live, like the 50/30/20 rule, and it shows what’s left to spend and save.":"Ütle Sallole, mida teenid ja kuidas elada tahad, näiteks 50/30/20 reegli järgi, ning ta näitab, mis jääb kulutamiseks ja säästmiseks.",
+"Set up my plan":"Seadista minu plaan",
+"Your money plan":"Sinu rahaplaan",
+"{0} Your plan · {1}":"{0} Sinu plaan · {1}",
+"Details":"Üksikasjad",
+"A 3-month safety cushion for needs (":"3-kuuline turvapadi vajadusteks (",
+") takes about":") võtab umbes",
+"{1} month{2}":"{1} kuu{2}",
+"at this pace.":"selle tempoga.",
+"Your dated goals need about":"Sinu kuupäevaga eesmärgid vajavad umbes",
+"a month. {1}":"kuus. {1}",
+"This month":"See kuu",
+"On {0} a month · {1}":"{0} kuus · {1}",
+"This month so far":"See kuu siiani",
+"What this means":"Mida see tähendab",
+"What this means for you":"Mida see sinu jaoks tähendab",
+"About":"Umbes",
+"a week for wants: eating out, shopping, fun.":"nädalas soovideks: väljas söömine, ostlemine, lõbu.",
+"Saving":"Säästmine",
+"a month adds up to":"kuus teeb aastaga",
+"in a year.":"kokku.",
+"A plan splits your monthly income into needs, wants and savings so you can live comfortably and still save. You can change it any time.":"Plaan jagab sinu kuusissetuleku vajadusteks, soovideks ja säästudeks, et saaksid mugavalt elada ja siiski säästa. Saad seda igal ajal muuta.",
+"Save plan":"Salvesta plaan",
+"· {0} left to spend":"· {0} jääb kulutada",
+"Your goals and the next 30 days of planned payments use up all of your balance, so it’s best to hold off on setting more aside.":"Sinu eesmärgid ja järgmise 30 päeva planeeritud maksed kasutavad kogu sinu saldo ära, seega on parem rohkem kõrvale panemisega oodata.",
+"Your goals with a date need about":"Sinu kuupäevaga eesmärgid vajavad umbes",
+"a month in total.{1}":"kuus kokku.{1}",
+"{6} saved":"{6} säästetud",
+"{7} goal":"{7} eesmärk",
+"Set aside for goals":"Eesmärkideks kõrvale pandud",
+"of {1} across {2} goal{3}{4}":"{1}-st {2} eesmärgi{3}{4} peale",
+"Smart saving":"Nutikas säästmine",
+"{5} Smart saving":"{5} Nutikas säästmine",
+"When income arrives, Sallo offers to put a share toward each goal. You choose every time.":"Kui sissetulek laekub, pakub Sallo iga eesmärgi jaoks osa kõrvale panna. Sina otsustad iga kord.",
+"Create a goal":"Loo eesmärk",
+"Debts and loans":"Võlad ja laenud",
+"New goal":"Uus eesmärk",
+"Edit goal":"Muuda eesmärki",
+"{0} to go":"{0} jäänud",
+"Target date {0}":"Tähtaeg {0}",
+"a month to get there":"kuus selle saavutamiseks",
+"Saved":"Säästetud",
+"of {2} · {3}%":"{2}-st · {3}%",
+"{9} Add or take out":"{9} Lisa või võta välja",
+"Add account":"Lisa konto",
+"Archived":"Arhiveeritud",
+"Add":"Lisa",
+"{1}. Budgets reset every period and never block spending.":"{1}. Eelarved lähtestuvad iga perioodi ja ei blokeeri kunagi kulutamist.",
+"Add a budget":"Lisa eelarve",
+"{1} Lock now":"{1} Lukusta nüüd",
+"Change passcode":"Muuda pääsukoodi",
+"Turn off passcode lock":"Lülita pääsukoodi lukk välja",
+"Turn on passcode lock":"Lülita pääsukoodi lukk sisse",
+"Passcode lock":"Pääsukoodi lukk",
+"Good to know":"Hea teada",
+"There is no account, so there is no “forgot password”. If you forget the passcode, the only way back is a backup file.":"Kontot pole, seega pole ka „unustasin parooli“. Kui unustad pääsukoodi, on ainus tee tagasi varukoopiafail.",
+"A longer passcode is much safer than a short one. Use 8 or more characters.":"Pikem pääsukood on palju turvalisem kui lühike. Kasuta 8 või rohkem märki.",
+"Your device’s own lock screen is your first protection. This adds a second one inside the app.":"Sinu seadme enda lukustusekraan on esimene kaitse. See lisab teise, rakenduse sees.",
+"Use at least 8 characters. Everything stored on this device will be encrypted with it.":"Kasuta vähemalt 8 märki. Kõik selles seadmes hoitav krüpteeritakse sellega.",
+"If you forget it, your data cannot be recovered":"Kui unustad selle, ei saa su andmeid taastada",
+"except from a backup file.":"muidu kui varukoopiafailist.",
+"Turn on":"Lülita sisse",
+"Change":"Muuda",
+"Your data will be stored without encryption on this device.":"Sinu andmeid hoitakse selles seadmes ilma krüptimiseta.",
+"Turn off":"Lülita välja",
+"Move to another phone":"Liigu teise telefoni",
+"Here:":"Siin:",
+"Save backup file":"Salvesta varukoopiafail",
+"below, then send the file to yourself (AirDrop, email, cloud drive, messages).":"allpool ja saada fail endale (AirDrop, e-post, pilvekettas, sõnumid).",
+"On the other device, open Sallo and choose":"Teises seadmes ava Sallo ja vali",
+"Import a backup":"Impordi varukoopia",
+"Pick the file. Everything appears: accounts, transactions, recurring items, goals and budgets.":"Vali fail. Kõik ilmub: kontod, tehingud, korduvad kirjed, eesmärgid ja eelarved.",
+"This works between iPhone, Android and computers, in any direction.":"See töötab iPhone'i, Androidi ja arvutite vahel mis tahes suunas.",
+"Export":"Ekspordi",
+"{3} Save backup file":"{3} Salvesta varukoopiafail",
+"{4} Save encrypted backup":"{4} Salvesta krüptitud varukoopia",
+"{5} Transactions as spreadsheet (CSV)":"{5} Tehingud tabelina (CSV)",
+"The plain backup can be read by anyone who gets the file. Use the encrypted one when you send it through email or cloud storage.":"Tavalist varukoopiat saab lugeda igaüks, kes faili kätte saab. Kasuta krüptitut, kui saadad e-posti või pilvesalvestuse kaudu.",
+"Choose a backup made by Sallo (.json or .sallo). You’ll see what it contains before anything changes.":"Vali Sallo tehtud varukoopia (.json või .sallo). Näed, mida see sisaldab, enne kui midagi muutub.",
+"{6} Import a backup":"{6} Impordi varukoopia",
+"Bank statement":"Pangaväljavõte",
+"Bring in transactions from a CSV file your bank gave you. Sallo reads it on this device and fills in categories for you.":"Too tehingud CSV-failist, mille pank sulle andis. Sallo loeb seda sinu seadmes ja täidab kategooriad sinu eest.",
+"{7} Import a bank statement (CSV)":"{7} Impordi pangaväljavõte (CSV)",
+"Delete everything":"Kustuta kõik",
+"Erases all data and settings stored by Sallo on this device.":"Kustutab selles seadmes kõik Sallo hoitavad andmed ja seaded.",
+"{8} Delete all data":"{8} Kustuta kõik andmed",
+"Sallo {1}":"Sallo {1}",
+"A private place for your money. Everything you enter stays on this device.":"Privaatne koht sinu rahale. Kõik, mida sisestad, jääb sellesse seadmesse.",
+"No account, no sign-up, no server.":"Ei mingit kontot, registreerimist ega serverit.",
+"No analytics, ads or tracking.":"Ei mingit analüütikat, reklaame ega jälgimist.",
+"The app can’t make network requests of its own. Once installed it works offline.":"Rakendus ei saa ise võrgupäringuid teha. Paigaldatuna töötab see ka ilma internetita.",
+"Add it to your home screen":"Lisa see avaekraanile",
+"iPhone / iPad:":"iPhone / iPad:",
+"open this page in Safari, tap the Share button, then":"ava see leht Safaris, puuduta nuppu Jaga ja siis",
+"Add to Home Screen":"Lisa avaekraanile",
+"Android:":"Android:",
+"open it in Chrome, tap the menu (⋮), then":"ava see Chrome'is, puuduta menüüd (⋮) ja siis",
+"Install app":"Paigalda rakendus",
+"or":"või",
+"Add to Home screen":"Lisa avaekraanile",
+"Installing also stops the browser from clearing your data when you haven’t opened the app for a while.":"Paigaldamine hoiab ära ka selle, et brauser sinu andmeid ei kustutaks, kui oled rakendust pikalt avamata jätnud.",
+"Be aware":"Pane tähele",
+"Your data lives in this browser’s storage on this device. Clearing site data or uninstalling the app erases it.":"Sinu andmed asuvad selle brauseri salvestusruumis selles seadmes. Saidiandmete kustutamine või rakenduse eemaldamine kustutab need.",
+"Make backups.":"Tee varukoopiaid.",
+"Reminders appear inside the app. A website can’t schedule alerts on its own, so Sallo shows what is due today and overdue when you open it.":"Meeldetuletused ilmuvad rakenduse sees. Veebileht ei saa ise märguandeid ajastada, seega näitab Sallo avamisel, mis on täna või üle tähtaja.",
+"Without the passcode lock, data is stored unencrypted. Turn it on in Security.":"Ilma pääsukoodi lukuta hoitakse andmeid krüptimata. Lülita see sisse jaotises Turvalisus.",
+"{0} the previous period ({1}{2}%).":"{0} eelmisest perioodist ({1}{2}%).",
+"Most expensive day:":"Kallim päev:",
+"Biggest single expense:":"Suurim üksikkulu:",
+"Your recurring payments add up to about":"Sinu püsimaksed teevad kokku umbes",
+"a month.":"kuus.",
+"Nothing spent yet in this period.":"Sel perioodil pole veel midagi kulutatud.",
+"Per day":"Päevas",
+"Last 6 periods":"Viimased 6 perioodi",
+"Income and spending for the last six periods":"Tulu ja kulutused viimase kuue perioodi kohta",
+"Spending":"Kulutused",
+"By category":"Kategooriate kaupa",
+"Not being counted.":"Ei arvestata.",
+"You’re paid per work day (below), so Sallo uses that instead and leaves this salary out of safe to spend, the timeline and the plan. Turn off daily pay to count it again.":"Sulle makstakse tööpäeva kohta (allpool), seega kasutab Sallo seda ja jätab selle palga vaba kulutamise summast, ajajoonest ja plaanist välja. Lülita päevatasu välja, et seda taas arvestada.",
+"Tell Sallo what you earn and when it arrives. “Safe to spend” then counts the bills due before your next payday, and the priorities check compares your spending with your income.":"Ütle Sallole, mida teenid ja millal see laekub. „Vaba kulutada“ arvestab siis enne järgmist palgapäeva tähtajaga arveid ning prioriteetide kontroll võrdleb sinu kulutusi sissetulekuga.",
+"{2} Regular pay (salary)":"{2} Regulaarne palk",
+"Save":"Salvesta",
+"See your money timeline":"Vaata oma raha ajajoont",
+"· last {0}":"· viimati {0}",
+"Track {1} as recurring":"Jälgi: {1} püsimaksena",
+"a year":"aastas",
+"Still being charged":"Veel tasutakse",
+"Tap the repeat button on a row to add it to your recurring items, so it shows up in Upcoming and in your safe-to-spend number.":"Puuduta rea juures kordusnuppu, et lisada see oma püsikirjete hulka, et see ilmuks vaates Tulemas ja vaba kulutamise summas.",
+"Looks like these stopped":"Paistab, et need lõppesid",
+"Active subscriptions and regular charges":"Aktiivsed tellimused ja püsimaksed",
+"a month":"kuus",
+"{1} {2} · {3} a year":"{1} {2} · {3} aastas",
+"Sallo looks for charges with the same name, a similar price and a steady rhythm in your own transactions. It can miss some and can occasionally guess wrong. Nothing leaves your device.":"Sallo otsib sinu enda tehingutest samanimelisi, sarnase hinnaga ja ühtlase rütmiga makseid. See võib mõne märkamata jätta ja vahel eksida. Midagi ei lahku sinu seadmest.",
+"Import a bank statement":"Impordi pangaväljavõte",
+"That’s roughly":"See on umbes",
+"{0} more work day{1}":"{0} tööpäeva rohkem",
+"before then, or you could move something later.":"enne seda, või saad midagi hilisemaks nihutada.",
+"{0} Not enough on {1}":"{0} Ei piisa kuupäeval {1}",
+"You’d be about":"Sul jääks puudu umbes",
+"short when {3} come{4} due.{5}":"kui {3} tähtaeg{4} kätte jõuab.{5}",
+"Money set aside for goals ({0}) is still part of that balance.":"Eesmärkideks kõrvale pandud raha ({0}) on selle saldo osa.",
+"{0} You’re covered until {1}":"{0} Oled kaetud kuni {1}",
+"{0} Your regular pay ({1}) isn’t counted here, because you’re paid per work day.":"{0} Sinu regulaarset palka ({1}) siin ei arvestata, kuna sulle makstakse tööpäeva kohta.",
+"{3} days":"{3} päeva",
+"Timeline":"Ajajoon",
+"You have":"Sul on",
+"By {3}":"Kuupäevaks {3}",
+"You’d have":"Sul oleks",
+"A forecast, not a promise: it assumes you work your usual days and that planned items happen on their dates. {6}":"Prognoos, mitte lubadus: eeldab, et töötad harjumuspäraselt ja planeeritu toimub oma kuupäevadel. {6}",
+"Work {0} day{1}":"Töö {0} päev{1?a}",
+"Balance after: {5}":"Saldo pärast: {5}",
+"Total":"Kokku",
+"Paid per work day?":"Tasu tööpäeva kohta?",
+"Add your daily pay":"Lisa oma päevatasu",
+"and the days you work.":"ja päevad, mil töötad.",
+"Change work days":"Muuda tööpäevi",
+"Your balance day by day: {1}every bill and income you’ve planned.":"Sinu saldo päev-päevalt: {1}iga planeeritud arve ja tulu.",
+"How far ahead":"Kui kaugele ette",
+"Recurring items":"Püsikirjed",
+"Over the next two weeks you need {0} but expect {1}. You may be short by":"Järgmise kahe nädala jooksul vajad {0}, aga ootad {1}. Sul võib puudu jääda",
+"Your balance covers the {0} due in the next two weeks.":"Sinu saldo katab järgmise kahe nädala jooksul tähtajaga {0}.",
+"Summary":"Kokkuvõte",
+"Out, 7 days":"Välja, 7 päeva",
+"In, 7 days":"Sisse, 7 päeva",
+"Overdue":"Üle tähtaja",
+"Show completed":"Näita lõpetatud",
+"Add planned item":"Lisa planeeritud kirje",
+"Add recurring item":"Lisa püsikirje",
+"Recurring":"Korduvad",
+"Tap to make every {3} a work day, or not":"Puuduta, et iga {3} oleks tööpäev või mitte",
+". On average about":". Keskmiselt umbes",
+"{0} Paid per work day":"{0} Tasu tööpäeva kohta",
+"If you earn a set amount for each day you work, tap your work days on the calendar. Sallo adds that pay on every work day in your timeline and in safe to spend.":"Kui saad tasu iga töötatud päeva eest kindla summa, puuduta kalendris oma tööpäevi. Sallo lisab selle tasu igale tööpäevale sinu ajajoonel ja vaba kulutamise summas.",
+"Work days":"Tööpäevad",
+"Day off":"Vaba päev",
+"Tap a weekday name to switch every one of them.":"Puuduta nädalapäeva nime, et lülitada kõik sellised päevad korraga.",
+"Mon–Fri":"E–R",
+"Clear all":"Tühjenda kõik",
+"{8} work day{9}":"{8} tööpäev{9?a}",
+"Calendar":"Kalender",
+"Something went wrong":"Midagi läks valesti",
+"Sallo":"Sallo",
+"Something went wrong.":"Midagi läks valesti.",
+"A new version is ready.":"Uus versioon on valmis.",
+"Reload":"Laadi uuesti",
+"Tomorrow":"Homme",
+"This week":"See nädal",
+"Next week":"Järgmine nädal",
+"Later this month":"Hiljem sel kuul",
+"Later":"Hiljem",
+"Balanced":"Tasakaalus",
+"The classic. Half for needs, a bit of fun, and a solid slice for saving.":"Klassika. Pool vajadustele, veidi lõbuks ja korralik osa säästmiseks.",
+"Comfortable":"Mugav",
+"More room for bills and everyday life, a gentler pace of saving.":"Rohkem ruumi arvetele ja igapäevaelule, rahulikum säästmistempo.",
+"Tight budget":"Napp eelarve",
+"When bills take a big share. Keeps a little for fun and a little for savings.":"Kui arved võtavad suure osa. Jätab pisut lõbuks ja pisut säästmiseks.",
+"Save more":"Säästa rohkem",
+"For lower bills or big goals. Builds savings fastest.":"Väiksemate arvete või suurte eesmärkide jaoks. Kasvatab säästusid kiiremini.",
+"Housing":"Eluase",
+"Bills & utilities":"Arved ja kommunaalid",
+"Groceries":"Toidukaubad",
+"Transport":"Transport",
+"Eating out":"Väljas söömine",
+"Health":"Tervis",
+"Shopping":"Ostud",
+"Leisure":"Vaba aeg",
+"Travel":"Reisimine",
+"Salary":"Palk",
+"Other income":"Muu sissetulek",
+"no date":"kuupäevata",
+"no amount":"summata",
+"Payment":"Makse",
+"Money in":"Sissetulek",
+"Other":"Muu",
+"This file is not from Sallo.":"See fail ei ole Sallo oma.",
+"This is a normal Sallo backup, not a shared-budget file. Use \"Import a backup\" in Settings for that.":"See on tavaline Sallo varukoopia, mitte jagatud eelarve fail. Kasuta selle jaoks Seadetes valikut „Impordi varukoopia“.",
+"This shared file is from a newer version of Sallo. Update the app first.":"See jagatud fail on Sallo uuemast versioonist. Uuenda esmalt rakendust.",
+"This shared file is damaged.":"See jagatud fail on kahjustatud.",
+"Partner":"Partner",
+"Me":"Mina",
+"Add an account first.":"Lisa esmalt konto.",
+"This file is not a Sallo backup.":"See fail ei ole Sallo varukoopia.",
+"This backup has no version number.":"Sellel varukoopial pole versiooninumbrit.",
+"This backup was made by a newer version of Sallo. Update the app first.":"See varukoopia tehti Sallo uuema versiooniga. Uuenda esmalt rakendust.",
+"Every day":"Iga päev",
+"Every week":"Iga nädal",
+"Every month":"Iga kuu",
+"Every year":"Iga aasta",
+"Every {0} {1}s":"Iga {0} {1}",
+"Expenses":"Kulud",
+"Transfers":"Ülekanded",
+"Nothing matches":"Midagi ei sobi",
+"Try a different search or filter.":"Proovi teist otsingut või filtrit.",
+"No transactions in this period":"Sel perioodil pole tehinguid",
+"Add your first expense or income with the + button.":"Lisa oma esimene kulu või tulu + nupuga.",
+"Your":"Sinu",
+"You’d be short straight away":"Sul jääks kohe puudu",
+"Nothing in the next three months gets you there, so it may need more saving first.":"Järgmise kolme kuu jooksul ei jõua sa selleni, seega võib vaja minna rohkem säästa.",
+"Can I afford this?":"Kas ma saan seda endale lubada?",
+"What is it?":"Mis see on?",
+"New phone, bed, holiday…":"Uus telefon, voodi, puhkus…",
+"Price":"Hind",
+"When would you buy it?":"Millal seda ostaksid?",
+"Choose today or a later day.":"Vali täna või hilisem päev.",
+"Choose a date.":"Vali kuupäev.",
+"Something new":"Midagi uut",
+"Goal created. Put money aside for it in Savings.":"Eesmärk loodud. Pane selle jaoks raha kõrvale vaates Säästud.",
+"Purchase":"Ost",
+"Added to Upcoming":"Lisatud vaatesse Tulemas",
+"On {0}, your":"Kuupäeval {0} sinu",
+"That counts your goal savings ({0}) as off limits.":"See arvestab sinu eesmärkide säästud ({0}) puutumatuks.",
+"Import bank statement":"Impordi pangaväljavõte",
+"Choose a different file":"Vali teine fail",
+"Choose a CSV file":"Vali CSV-fail",
+"Not found":"Ei leitud",
+"Description":"Kirjeldus",
+"None":"Puudub",
+"More detail (used to find the category)":"Lisainfo (kasutatakse kategooria leidmiseks)",
+"Amount (one column, minus for money out)":"Summa (üks veerg, miinus väljamineva raha korral)",
+"No single amount column":"Ühte summaveergu pole",
+"Money out column":"Väljamineva raha veerg",
+"Money in column":"Sissetuleva raha veerg",
+"Direction column (D / K, debit / credit)":"Suuna veerg (D / K, deebet / kreedit)",
+"Day, month, year (13.11.2026)":"Päev, kuu, aasta (13.11.2026)",
+"Month, day, year (11/13/2026)":"Kuu, päev, aasta (11/13/2026)",
+"Year first (2026-11-13)":"Aasta enne (2026-11-13)",
+"Dot (1,234.50)":"Punkt (1,234.50)",
+"Comma (1.234,50)":"Koma (1.234,50)",
+"Already added":"Juba lisatud",
+"No category":"Kategooriata",
+"That file is too large for a bank statement.":"See fail on pangaväljavõtte jaoks liiga suur.",
+"Could not read that file.":"Seda faili ei saanud lugeda.",
+"That doesn’t look like a bank statement CSV.":"See ei paista olevat pangaväljavõtte CSV.",
+"Imported from bank statement":"Imporditud pangaväljavõttest",
+"Undo":"Võta tagasi",
+"Import undone":"Import tühistatud",
+"Column {0}":"Veerg {0}",
+"{0} transaction{1} imported":"{0} tehing{1?ut} imporditud",
+", work day":", tööpäev",
+", has activity":", on tegevust",
+"Pay for the day":"Päeva tasu",
+"Counted as a work day":"Arvestatud tööpäevana",
+"Nothing on this day":"Sel päeval pole midagi",
+"Add an event, a reminder or a planned payment.":"Lisa sündmus, meeldetuletus või planeeritud makse.",
+"Backup shared":"Varukoopia jagatud",
+"Backup file saved":"Varukoopiafail salvestatud",
+"Spreadsheet file saved":"Tabelifail salvestatud",
+"Encrypted backup":"Krüptitud varukoopia",
+"Passphrase":"Paroolifraas",
+"At least 8 characters. A few random words works well.":"Vähemalt 8 märki. Mõned juhuslikud sõnad sobivad hästi.",
+"Repeat passphrase":"Korda paroolifraasi",
+"Use at least 8 characters.":"Kasuta vähemalt 8 märki.",
+"The two passphrases don’t match.":"Kaks paroolifraasi ei ühti.",
+"Encrypting…":"Krüptimine…",
+"Encrypted backup saved":"Krüptitud varukoopia salvestatud",
+"Could not encrypt:":"Krüptimine ebaõnnestus:",
+"That file is too large to be a Sallo backup.":"See fail on liiga suur, et olla Sallo varukoopia.",
+"That file isn’t a Sallo backup. Choose the .json or .sallo file you exported.":"See fail ei ole Sallo varukoopia. Vali eksporditud .json- või .sallo-fail.",
+"Unlocking…":"Avamine…",
+"Wrong passphrase, or the file was changed.":"Vale paroolifraas või faili on muudetud.",
+"Import backup":"Impordi varukoopia",
+"Backup imported":"Varukoopia imporditud",
+"Delete all data?":"Kustutad kõik andmed?",
+"Every account, transaction, goal and setting on this device is erased permanently. Export a backup first if you might want it back.":"Kõik selle seadme kontod, tehingud, eesmärgid ja seaded kustutatakse jäädavalt. Ekspordi esmalt varukoopia, kui võid seda tagasi soovida.",
+"Start fresh?":"Alustad otsast?",
+"The example data is removed and you set up your own. Nothing else is affected.":"Näidisandmed eemaldatakse ja sa seadistad oma andmed. Muu ei muutu.",
+"Combined: {0} added, {1} updated":"Ühendatud: {0} lisatud, {1} uuendatud",
+"Loans & debt":"Laenud ja võlad",
+"No interest":"Intressita",
+"Fully received":"Täielikult kätte saadud",
+"Fully paid off":"Täielikult tasutud",
+"No monthly payment set":"Kuumakset pole määratud",
+"All settled":"Kõik klaaritud",
+"Settled":"Klaaritud",
+"progress":"edenemine",
+"Nothing to pay off":"Pole midagi tasuda",
+"No debts or loans":"Võlgu ega laene pole",
+"Track a loan, a credit card, or money a friend owes you. See how long it takes to clear and watch it shrink.":"Jälgi laenu, krediitkaarti või raha, mida sõber sulle võlgneb. Vaata, kui kaua läheb tasumiseks, ja jälgi, kuidas see väheneb.",
+"Debt":"Võlg",
+"This debt no longer exists":"Seda võlga enam ei ole",
+"Added to balance":"Saldole lisatud",
+"Received":"Kätte saadud",
+"Scheduled payment":"Ajastatud makse",
+"on":"kuupäeval",
+"Still owed to you":"Sulle veel võlgnetakse",
+"Left to pay":"Tasuda jäänud",
+"Progress":"Edenemine",
+"Money received":"Kätte saadud raha",
+"Add payment":"Lisa makse",
+"Add interest":"Lisa intress",
+"Add to balance":"Lisa saldole",
+"Collected":"Sisse kogutud",
+"Debt-free":"Võlavaba",
+"Nothing recorded yet":"Midagi pole veel registreeritud",
+"Record each payment and the balance here goes down.":"Registreeri iga makse ja siinne jääk väheneb.",
+"All received!":"Kõik kätte saadud!",
+"Debt-free!":"Võlavaba!",
+"came back to you":"tuli sulle tagasi",
+"in":"kuupäeval",
+"Edit debt or loan":"Muuda võlga või laenu",
+"Name":"Nimi",
+"Car loan, credit card, lent to a friend…":"Autolaen, krediitkaart, sõbrale laenatud…",
+"I owe":"Mina võlgnen",
+"Owed to me":"Mulle võlgnetakse",
+"Amount":"Summa",
+"What is owed in total. If you’ve already paid part of it, enter what’s left today.":"Kui palju kokku võlgnetakse. Kui oled osa juba tasunud, sisesta, mis täna järele jäänud on.",
+"Yearly interest (optional)":"Aastane intress (valikuline)",
+"Leave empty if there is none.":"Jäta tühjaks, kui seda pole.",
+"Monthly payment (optional)":"Kuumakse (valikuline)",
+"Sallo adds it to Upcoming and your timeline so safe to spend stays honest.":"Sallo lisab selle vaatesse Tulemas ja ajajoonele, et vaba kulutamise summa jääks ausaks.",
+"Next payment date":"Järgmise makse kuupäev",
+"Account it’s paid from or to":"Konto, millest makstakse või kuhu laekub",
+"Give it a name.":"Pane sellele nimi.",
+"Enter a percentage like 5.5.":"Sisesta protsent, näiteks 5,5.",
+"Choose the date of the next payment.":"Vali järgmise makse kuupäev.",
+"Paid-off debts are kept as they are.":"Tasutud võlad jäävad nii, nagu need on.",
+"Delete this debt?":"Kustutad selle võla?",
+"The debt, its history and its repeating payment are removed. Transactions you already recorded in Activity stay.":"Võlg, selle ajalugu ja korduv makse eemaldatakse. Tegevusse juba registreeritud tehingud jäävad.",
+"Delete":"Kustuta",
+"Deleted":"Kustutatud",
+"This one is already paid off.":"See on juba tasutud.",
+"Record a payment":"Registreeri makse",
+"If this is one of your scheduled payments, mark it paid in Upcoming instead so it isn’t counted twice.":"Kui see on üks sinu ajastatud maksetest, märgi see hoopis vaates Tulemas tasutuks, et seda ei loetaks topelt.",
+"Debt payment":"Võla makse",
+"Recorded":"Registreeritud",
+"Payment recorded":"Makse registreeritud",
+"Add interest or fees":"Lisa intress või tasud",
+"Note (optional)":"Märge (valikuline)",
+"Interest for November":"Novembri intress",
+"Remove this entry?":"Eemaldad selle kirje?",
+"It is removed from the debt, and the matching transaction in Activity is deleted too.":"See eemaldatakse võlast ja sellele vastav tehing Tegevuses kustutatakse samuti.",
+"It is removed from the debt history.":"See eemaldatakse võla ajaloost.",
+"Remove":"Eemalda",
+"Removed":"Eemaldatud",
+"{0}% a year":"{0}% aastas",
+"{0} month{1}":"{0} kuu{1?d}",
+"{0} a month":"{0} kuus",
+"· done {0}":"· tehtud {0}",
+"{0} debt{1} to pay off":"{0} tasumata võlg{1?a}",
+"· {0} to collect":"· {0} kokku koguda",
+"· {0} from start to finish":"· {0} algusest lõpuni",
+", next on {0}":", järgmine {0}",
+"and save about {0} in interest":"ja säästa intressi pealt umbes {0}",
+"{0} days":"{0} päeva",
+"{0} months":"{0} kuud",
+"{0} years":"{0} aastat",
+"{0} is fully repaid to you":"{0} on sulle täielikult tagasi makstud",
+"You paid off {0}":"Sa tasusid ära: {0}",
+"{0} (repayment)":"{0} (tagasimakse)",
+"Everyday account":"Igapäevakonto",
+"Dinner with friends":"Õhtusöök sõpradega",
+"Takeaway pizza":"Kaasavõetud pitsa",
+"Dentist check-up":"Hambaarsti kontroll",
+"New bed":"Uus voodi",
+"From Pay":"Palgast",
+"Summer trip":"Suvereis",
+"Laptop instalments":"Sülearvuti järelmaks",
+"Event":"Sündmus",
+"Bank account":"Pangakonto",
+"Cash":"Sularaha",
+"Card":"Kaart",
+"Enter an amount like 12.50.":"Sisesta summa, näiteks 12,50.",
+"Enter an amount.":"Sisesta summa.",
+"The amount must be more than zero.":"Summa peab olema suurem kui null.",
+"The amount can’t be negative.":"Summa ei saa olla negatiivne.",
+"(archived)":"(arhiveeritud)",
+"Edit transaction":"Muuda tehingut",
+"New transaction":"Uus tehing",
+"What was it for?":"Mille jaoks see oli?",
+"To account":"Kontole",
+"Choose an account.":"Vali konto.",
+"Choose where the money goes.":"Vali, kuhu raha läheb.",
+"Pick two different accounts.":"Vali kaks erinevat kontot.",
+"Saved. Heads up: essential bills coming up aren’t fully covered.":"Salvestatud. Tähelepanu: tulevased olulised arved pole täielikult kaetud.",
+"Saved. Heads up: money is getting tight for essential bills.":"Salvestatud. Tähelepanu: raha on olulisteks arveteks napiks jäämas.",
+"Delete this transaction?":"Kustutad selle tehingu?",
+"The planned payment it came from will go back to Upcoming.":"Planeeritud makse, millest see tekkis, läheb tagasi vaatesse Tulemas.",
+"This can’t be undone from here.":"Seda ei saa siit tagasi võtta.",
+"Transaction deleted":"Tehing kustutatud",
+"Edit":"Muuda",
+"New planned item":"Uus planeeritud kirje",
+"Dentist, birthday…":"Hambaarst, sünnipäev…",
+"Rent, salary, subscription…":"Üür, palk, tellimus…",
+"Time (optional)":"Kellaaeg (valikuline)",
+"Choose when paying":"Vali, millal maksad",
+"Does not repeat":"Ei kordu",
+"Daily":"Iga päev",
+"Weekly":"Iga nädal",
+"Monthly":"Iga kuu",
+"Yearly":"Iga aasta",
+"Every":"Iga",
+"Ends on (optional)":"Lõpeb (valikuline)",
+"The end date must be on or after the start date.":"Lõppkuupäev peab olema alguskuupäev või hilisem.",
+"Recurring item added":"Püsikirje lisatud",
+"Added":"Lisatud",
+"Skip this date?":"Jätad selle kuupäeva vahele?",
+"Delete this item?":"Kustutad selle kirje?",
+"Only this date is removed. The rest of the series stays, and this date won’t come back.":"Eemaldatakse ainult see kuupäev. Ülejäänud seeria jääb ja see kuupäev ei tule tagasi.",
+"The transaction created when you marked it paid will be deleted too.":"Kustutatakse ka tehing, mis loodi, kui märkisid selle tasutuks.",
+"Date skipped":"Kuupäev vahele jäetud",
+"Paid":"Tasutud",
+"Skipped":"Vahele jäetud",
+"Due today":"Tähtaeg täna",
+"Past":"Möödunud",
+"until":"kuni",
+"(paused)":"(peatatud)",
+"Mark as received":"Märgi laekunuks",
+"Mark as paid":"Märgi tasutuks",
+"this date":"see kuupäev",
+"Resume series":"Jätka seeriat",
+"Pause series":"Peata seeria",
+"Delete this date":"Kustuta see kuupäev",
+"Restored":"Taastatud",
+"Moved back to upcoming":"Viidud tagasi tulevaste hulka",
+"Series paused":"Seeria peatatud",
+"Series resumed":"Seeria jätkub",
+"Stop this series?":"Lõpetad selle seeria?",
+"Later dates are removed. Anything already paid stays in your history.":"Hilisemad kuupäevad eemaldatakse. Kõik juba tasutu jääb sinu ajalukku.",
+"Stop series":"Lõpeta seeria",
+"Series ended":"Seeria lõpetatud",
+"Received on":"Laekus",
+"Paid on":"Tasutud",
+"Confirm":"Kinnita",
+"Saved to your activity":"Salvestatud sinu tegevusse",
+"Edit series":"Muuda seeriat",
+"First date":"Esimene kuupäev",
+"Delete series":"Kustuta seeria",
+"The end date must be on or after the first date.":"Lõppkuupäev peab olema esimene kuupäev või hilisem.",
+"Series updated":"Seeria uuendatud",
+"Delete this series?":"Kustutad selle seeria?",
+"All upcoming dates are removed. Payments you already marked as paid stay in your activity.":"Kõik tulevased kuupäevad eemaldatakse. Juba tasutuks märgitud maksed jäävad sinu tegevusse.",
+"Series deleted":"Seeria kustutatud",
+"Edit account":"Muuda kontot",
+"New account":"Uus konto",
+"Type":"Tüüp",
+"Current balance":"Praegune saldo",
+"Changing this changes the starting point your balance is counted from.":"Selle muutmine muudab alguspunkti, millest sinu saldot loetakse.",
+"What is in it right now. You can use a negative number for a debt.":"Mis seal praegu on. Võlg võib olla negatiivne arv.",
+"Archive":"Arhiveeri",
+"Give the account a name.":"Pane kontole nimi.",
+"upcoming item":"tulev kirje",
+"upcoming items":"tulevat kirjet",
+"repeating item":"korduv kirje",
+"repeating items":"korduvat kirjet",
+"savings goal":"säästueesmärk",
+"savings goals":"säästueesmärki",
+"Delete this account?":"Kustutad selle konto?",
+"Delete account":"Kustuta konto",
+"delete account":"kustuta konto",
+"Account deleted":"Konto kustutatud",
+"Remove this account?":"Eemaldad selle konto?",
+"It has transactions, so it will be archived: hidden from lists, with its history kept.":"Sellel on tehinguid, seega see arhiveeritakse: peidetakse loenditest, ajalugu jääb alles.",
+"It has no transactions, so it will be deleted.":"Sellel pole tehinguid, seega see kustutatakse.",
+"Account archived":"Konto arhiveeritud",
+"Account restored":"Konto taastatud",
+"Edit category":"Muuda kategooriat",
+"New category":"Uus kategooria",
+"Give the category a name.":"Pane kategooriale nimi.",
+"Remove this category?":"Eemaldad selle kategooria?",
+"It is used by existing items, so it will be archived: hidden from pickers, history kept.":"Seda kasutavad olemasolevad kirjed, seega see arhiveeritakse: peidetakse valijatest, ajalugu jääb alles.",
+"It isn’t used anywhere, so it will be deleted.":"Seda ei kasutata kuskil, seega see kustutatakse.",
+"Done":"Valmis",
+"Category restored":"Kategooria taastatud",
+"New savings goal":"Uus säästueesmärk",
+"Goal":"Eesmärk",
+"Holiday, new laptop, emergency fund…":"Puhkus, uus sülearvuti, hädaabifond…",
+"Target amount":"Sihtsumma",
+"Target date (optional)":"Tähtaeg (valikuline)",
+"Suggest setting aside":"Soovita kõrvale panna",
+"Smart: based on my target date":"Nutikalt: minu tähtaja põhjal",
+"5% of income":"5% sissetulekust",
+"10% of income":"10% sissetulekust",
+"15% of income":"15% sissetulekust",
+"20% of income":"20% sissetulekust",
+"30% of income":"30% sissetulekust",
+"Used when money comes in and Sallo offers to put some aside for this goal.":"Kasutatakse, kui raha laekub ja Sallo pakub selle eesmärgi jaoks osa kõrvale panna.",
+"Give the goal a name.":"Pane eesmärgile nimi.",
+"Choose a valid date.":"Vali kehtiv kuupäev.",
+"Delete this goal?":"Kustutad selle eesmärgi?",
+"Its saved amounts are removed with it. Your account balances don’t change.":"Selle säästetud summad eemaldatakse koos sellega. Sinu kontode saldod ei muutu.",
+"Goal deleted":"Eesmärk kustutatud",
+"Edit saved amount":"Muuda säästetud summat",
+"Add to goal":"Lisa eesmärgile",
+"Take out":"Võta välja",
+"All spending":"Kõik kulutused",
+"Every category already has a budget.":"Igal kategoorial on juba eelarve.",
+"Edit budget":"Muuda eelarvet",
+"New budget":"Uus eelarve",
+"Applies to":"Kehtib",
+"Limit per period":"Limiit perioodi kohta",
+"Budget removed":"Eelarve eemaldatud",
+"Put some aside?":"Paned osa kõrvale?",
+"from":"allikas:",
+"From":"Allikas:",
+"From income":"Sissetulekust",
+"· check the amounts":"· kontrolli summasid",
+"· total":"· kokku",
+"Tap at least one day on the calendar.":"Puuduta kalendris vähemalt ühte päeva.",
+"Enter an amount like 80.00.":"Sisesta summa, näiteks 80,00.",
+"Check the amount for":"Kontrolli summat:",
+"Because it’s your only account, you start completely fresh. Your categories and settings stay.":"Kuna see on sinu ainus konto, alustad täiesti otsast. Sinu kategooriad ja seaded jäävad.",
+"Savings goals and budgets stay.":"Säästueesmärgid ja eelarved jäävad.",
+"Put {0} aside":"Pane {0} kõrvale",
+"Added {0}":"Lisatud {0}",
+"Added {0} day{1}":"Lisatud {0} päev{1?a}",
+"Priorities check":"Prioriteetide kontroll",
+"Heads up":"Tähelepanu",
+"You’re even":"Olete tasa",
+"Couples":"Paarid",
+"Shared budget used":"Jagatud eelarvest kasutatud",
+"split by income":"jagatud sissetuleku järgi",
+"split your own way":"jagatud omal moel",
+"split evenly":"jagatud võrdselt",
+"paid":"maksis",
+"Nothing shared this month":"Sel kuul pole midagi jagatud",
+"When you add an expense, tick “Shared with":"Kui lisad kulu, märgi „Jagatud:",
+"”. Your partner’s shared expenses appear after you import their file.":"“. Sinu partneri jagatud kulud ilmuvad pärast tema faili importimist.",
+"days ago":"päeva tagasi",
+"Your name":"Sinu nimi",
+"Your partner’s name":"Partneri nimi",
+"Half each":"Pooleks",
+"By income":"Sissetuleku järgi",
+"My own split":"Minu jaotus",
+"Your monthly income":"Sinu kuusissetulek",
+"Used when splitting by income. Your partner sees it in the file.":"Kasutatakse sissetuleku järgi jagamisel. Sinu partner näeb seda failis.",
+"Your partner’s monthly income":"Partneri kuusissetulek",
+"Ask them. Only used when splitting by income.":"Küsi tema käest. Kasutatakse ainult sissetuleku järgi jagamisel.",
+"Your share for “my own split” (%)":"Sinu osa „minu jaotuse“ puhul (%)",
+"Your partner pays the rest.":"Partner maksab ülejäänu.",
+"Shared monthly budget (optional)":"Jagatud kuueelarve (valikuline)",
+"What you two want to spend together in a month.":"Mida te kahekesi kuus koos kulutada tahate.",
+"Start":"Alusta",
+"Set up couples":"Seadista paarid",
+"Couples settings":"Paaride seaded",
+"Enter your name.":"Sisesta oma nimi.",
+"Enter your partner’s name.":"Sisesta partneri nimi.",
+"Enter an amount like 1400.":"Sisesta summa, näiteks 1400.",
+"Enter an amount like 800.":"Sisesta summa, näiteks 800.",
+"Enter a percentage from 0 to 100.":"Sisesta protsent vahemikus 0–100.",
+"Enter both incomes to split by income.":"Sisesta mõlemad sissetulekud, et jagada sissetuleku järgi.",
+"Couples is on. Tick “Shared” on expenses you split.":"Paarid on sisse lülitatud. Märgi jagatavad kulud „Jagatud“.",
+"That file is too large.":"See fail on liiga suur.",
+"That doesn’t look like a Sallo shared file.":"See ei paista olevat Sallo jagatud fail.",
+"A different partner?":"Teine partner?",
+"Replace":"Asenda",
+"{0} owes you {1}":"{0} võlgneb sulle {1}",
+"You owe {0} {1}":"Sa võlgned {0}-le {1}",
+"{0}’s file was imported {1}{2}":"{0} faili imporditi {1}{2}",
+"You haven’t imported anything from {0} yet.":"Sa pole veel midagi {0} käest importinud.",
+"You last sent yours {0}.":"Viimati saatsid enda oma {0}.",
+"Ready to send to {0}":"Valmis saatmiseks: {0}",
+"File saved. Send it to {0}.":"Fail salvestatud. Saada see: {0}.",
+"Your couples setup is linked to someone else. Importing this file from {0} replaces the shared expenses you received before.":"Sinu paaride seadistus on seotud kellegi teisega. Selle faili importimine: {0} asendab varem saadud jagatud kulud.",
+"Linked with {0}. Check your names and split.":"Seotud: {0}. Kontrolli nimesid ja jaotust.",
+"Imported {0} shared expense{1} from {2}":"Imporditud {0} jagatud kulu{1?} sellelt: {2}",
+"That passcode didn’t work.":"See pääsukood ei sobinud.",
+"There is no way to recover the data without it. You can erase this device and start again, then import a backup file if you have one.":"Ilma selleta ei saa andmeid taastada. Saad selle seadme tühjendada ja otsast alustada ning siis varukoopiafaili importida, kui see on olemas.",
+"Erase and start over":"Tühjenda ja alusta otsast",
+"Too many attempts. Try again in {0} s.":"Liiga palju katseid. Proovi uuesti {0} s pärast.",
+"Rent or mortgage":"Üür või kodulaen",
+"Water and heating":"Vesi ja küte",
+"Phone":"Telefon",
+"Insurance":"Kindlustus",
+"Currency":"Valuuta",
+"Account name":"Konto nimi",
+"What’s in it right now?":"Mis seal praegu on?",
+"Leave it empty for zero.":"Jäta tühjaks, kui on null.",
+"How much do you get each time (or per work day)?":"Kui palju saad iga kord (või tööpäeva kohta)?",
+"How often":"Kui tihti",
+"Every 2 weeks":"Iga 2 nädala tagant",
+"Per work day (Mon–Fri)":"Tööpäeva kohta (E–R)",
+"Next payday":"Järgmine palgapäev",
+"on the":"kuupäeval",
+"Enter an amount like 1250.00.":"Sisesta summa, näiteks 1250,00.",
+"Enter an amount like 2000.00.":"Sisesta summa, näiteks 2000,00.",
+"Enter an amount like 45.00.":"Sisesta summa, näiteks 45,00.",
+"Everything else":"Kõik muu",
+"under 1":"alla 1",
+"No spending recorded in this period":"Sel perioodil pole kulutusi registreeritud",
+"You’re short for what’s coming up.":"Sul jääb puudu sellest, mis on tulemas.",
+"After bills, work days":"Pärast arveid, tööpäevi",
+"After bills":"Pärast arveid",
+"and savings":"ja säästusid",
+", next 30 days":", järgmised 30 päeva",
+"Spent this period":"Sel perioodil kulutatud",
+"You owe":"Sa võlgned",
+"Owed to you":"Sulle võlgnetakse",
+"Show amounts":"Näita summasid",
+"Hide amounts":"Peida summad",
+"You haven’t exported a backup yet.":"Sa pole veel varukoopiat eksportinud.",
+"and your work days":"ja sinu tööpäevi",
+"Budget used":"Eelarvest kasutatud",
+"{0} {1} percent":"{0} {1} protsenti",
+"Spending by category: {0}":"Kulutused kategooriate kaupa: {0}",
+", until {0}":", kuni {0}",
+"{0} owed to you":"{0} võlgnetakse sulle",
+"{0} free after {1} set aside":"{0} vaba pärast {1} kõrvale panemist",
+"Your last backup is {0} days old.":"Sinu viimane varukoopia on {0} päeva vana.",
+"{0} to pay":"{0} tasuda",
+"{0} expected":"{0} oodata",
+"Your monthly income (after tax)":"Sinu kuusissetulek (pärast makse)",
+"For example 1400. Sallo splits it for you below.":"Näiteks 1400. Sallo jaotab selle sulle allpool.",
+"That fits comfortably in any of these plans.":"See mahub mugavalt igasse neist plaanidest.",
+"Choose your own percentages for needs, wants and savings.":"Vali ise protsendid vajaduste, soovide ja säästude jaoks.",
+"I’ll do my own thing":"Teen omamoodi",
+"No plan. Sallo still tracks everything, and just won’t compare you to percentages.":"Plaani pole. Sallo jälgib kõike ikkagi, kuid ei võrdle sind protsentidega.",
+"Enter an amount like 1400.00.":"Sisesta summa, näiteks 1400,00.",
+"Enter your monthly income so Sallo can split it.":"Sisesta oma kuusissetulek, et Sallo saaks selle jaotada.",
+"Needs, wants and savings must add up to 100.":"Vajadused, soovid ja säästud peavad kokku andma 100.",
+"used":"kasutatud",
+"Your plan covers that.":"Sinu plaan katab selle.",
+"Change my plan":"Muuda minu plaani",
+"Choose a plan":"Vali plaan",
+"Plan saved":"Plaan salvestatud",
+"Shared":"Jagatud",
+"Not counted":"Ei arvestata",
+"Mark received":"Märgi laekunuks",
+"Mark paid":"Märgi tasutuks",
+"You can cover that right now.":"Sa saad selle praegu katta.",
+"By":"Kuni",
+"No deadline":"Tähtaega pole",
+"Reached":"Saavutatud",
+"No savings goals yet":"Säästueesmärke veel pole",
+"Set a target, put money aside bit by bit and watch it fill up.":"Määra siht, pane raha tasapisi kõrvale ja jälgi, kuidas see täitub.",
+"Track a loan or money you’ve lent":"Jälgi laenu või raha, mille oled laenanud",
+"This goal no longer exists":"Seda eesmärki enam ei ole",
+"Taken out":"Välja võetud",
+"Nothing saved yet":"Midagi pole veel säästetud",
+"Add the first amount to start filling this goal.":"Lisa esimene summa, et see eesmärk täituma hakkaks.",
+"Loans, cards, money lent":"Laenud, kaardid, laenatud raha",
+"Preferences":"Eelistused",
+"Monday":"Esmaspäev",
+"Tuesday":"Teisipäev",
+"Wednesday":"Kolmapäev",
+"Thursday":"Neljapäev",
+"Friday":"Reede",
+"Saturday":"Laupäev",
+"Sunday":"Pühapäev",
+"Pay and income":"Palk ja sissetulek",
+"Add your salary or daily pay":"Lisa oma palk või päevatasu",
+"Try a purchase before you make it":"Proovi ostu enne tegemist",
+"Share a budget with a partner":"Jaga eelarvet partneriga",
+"My own way":"Minu viis",
+"Choose how you want to live":"Vali, kuidas tahad elada",
+"Accounts":"Kontod",
+"Categories":"Kategooriad",
+"Find regular charges in your spending":"Leia kulutustest püsimaksed",
+"Backup, import and export":"Varukoopia, import ja eksport",
+"Last backup":"Viimane varukoopia",
+"No backup yet":"Varukoopiat veel pole",
+"Security":"Turvalisus",
+"Passcode lock is on":"Pääsukoodi lukk on sees",
+"Passcode lock is off":"Pääsukoodi lukk on väljas",
+"About and privacy":"Teave ja privaatsus",
+"Version":"Versioon",
+"Device default":"Seadme vaikimisi",
+"Changing it relabels your amounts. It does not convert them.":"Selle muutmine muudab summade märgistust. See ei teisenda neid.",
+"Number and date format":"Numbri- ja kuupäevavorming",
+"The app’s wording stays in English.":"Rakenduse sõnastus jääb inglise keelde.",
+"Week starts on":"Nädal algab",
+"Month starts on day":"Kuu algab päeval",
+"Set this to your payday and your “month” will run from then.":"Määra see oma palgapäevaks ja sinu „kuu“ kestab sellest alates.",
+"Theme":"Teema",
+"Match my device":"Järgi minu seadet",
+"Light":"Hele",
+"Dark":"Tume",
+"Sounds":"Helid",
+"Soft sounds on":"Pehmed helid sees",
+"Off":"Väljas",
+"Saving prompts":"Säästmise pakkumised",
+"Suggest setting money aside":"Soovita raha kõrvale panna",
+"When income arrives, Sallo offers to put some toward your goals. You choose every time.":"Kui sissetulek laekub, pakub Sallo osa sinu eesmärkide jaoks kõrvale panna. Sina otsustad iga kord.",
+"Spending warnings":"Kulutuste hoiatused",
+"Warn me about non-essentials":"Hoiata mind mitte-hädavajalike kohta",
+"Gentle heads-ups when non-essential spending may crowd out rent, utilities and other priorities.":"Leebed märkused, kui mitte-hädavajalikud kulutused võivad tõrjuda välja üüri, kommunaalid ja muud prioriteedid.",
+"Comfortable limit for non-essentials":"Mitte-hädavajalike mugav piir",
+"40% of income":"40% sissetulekust",
+"50% of income":"50% sissetulekust",
+"Spending on non-essentials above this share of your income triggers a heads-up.":"Mitte-hädavajalike kulutuste ületamine sellest osast sinu sissetulekust annab märku.",
+"Phone orientation":"Telefoni asend",
+"Allow rotating":"Luba pööramine",
+"Portrait only":"Ainult püstiasend",
+"Portrait only locks the screen upright where the browser allows it, and otherwise asks you to turn the phone back.":"Ainult püstiasend lukustab ekraani püsti, kus brauser seda lubab, ja palub muidu telefoni tagasi pöörata.",
+"· archived":"· arhiveeritud",
+"No accounts":"Kontosid pole",
+"Add where your money lives: a bank account, cash, a card.":"Lisa, kus su raha asub: pangakonto, sularaha, kaart.",
+"Over by":"Ületatud",
+"left":"järel",
+"No budgets yet":"Eelarveid veel pole",
+"Set a limit for a category, or for all spending, and see how you’re doing.":"Määra kategooria või kõigi kulutuste limiit ja vaata, kuidas sul läheb.",
+"On":"Sees",
+"Your data is encrypted on this device with AES-256 and the app asks for your passcode when you open it or come back after a while.":"Sinu andmed on selles seadmes AES-256-ga krüpteeritud ja rakendus küsib pääsukoodi avamisel või pärast pikemat eemalolekut.",
+"Encrypts everything stored on this device with a passcode you choose, and asks for it when you open the app.":"Krüpteerib kõik selles seadmes hoitava sinu valitud pääsukoodiga ja küsib seda rakenduse avamisel.",
+"Lock after being away for":"Lukusta pärast eemalolekut",
+"1 minute":"1 minut",
+"5 minutes":"5 minutit",
+"15 minutes":"15 minutit",
+"30 minutes":"30 minutit",
+"Every time I leave the app":"Iga kord, kui rakendusest lahkun",
+"Set a passcode":"Määra pääsukood",
+"Repeat passcode":"Korda pääsukoodi",
+"The two entries don’t match.":"Kaks sisestust ei ühti.",
+"Current passcode":"Praegune pääsukood",
+"New passcode":"Uus pääsukood",
+"At least 8 characters.":"Vähemalt 8 märki.",
+"Repeat new passcode":"Korda uut pääsukoodi",
+"That isn’t your current passcode.":"See ei ole sinu praegune pääsukood.",
+"Passcode changed":"Pääsukood muudetud",
+"Backup and transfer":"Varukoopia ja ülekandmine",
+"Last backup:":"Viimane varukoopia:",
+"(over a month ago)":"(üle kuu aja tagasi)",
+"You haven’t made a backup yet.":"Sa pole veel varukoopiat teinud.",
+"Insights":"Ülevaated",
+"The same as":"Sama mis",
+"Same as last period":"Sama mis eelmisel perioodil",
+"vs last period":"võrreldes eelmise perioodiga",
+"Your pay each time":"Sinu palk iga kord",
+"For example your monthly salary after tax. Leave it empty to clear it.":"Näiteks sinu kuupalk pärast makse. Jäta tühjaks, et see eemaldada.",
+"It repeats from this date. It also appears in Upcoming as repeating income.":"See kordub sellest kuupäevast alates. See ilmub vaates Tulemas ka korduva tuluna.",
+"Pay removed":"Palk eemaldatud",
+"You owe {0}":"Sa võlgned {0}",
+"Owed to you {0}":"Sulle võlgnetakse {0}",
+"{0} · week starts {1}":"{0} · nädal algab: {1}",
+"{0} active":"{0} aktiivset",
+"{0} set":"{0} määratud",
+"{0} total":"{0} kokku",
+"{0} more than":"{0} rohkem kui",
+"{0} less than":"{0} vähem kui",
+"every 2 weeks":"iga 2 nädala tagant",
+"every 3 months":"iga 3 kuu tagant",
+"Price went up":"Hind tõusis",
+"Price went down":"Hind langes",
+"Tracked":"Jälgitud",
+"No regular charges found yet":"Püsimakseid pole veel leitud",
+"Sallo spots a charge once it has repeated a few times at a steady price: three months in a row for a monthly one. Import a bank statement to look back further.":"Sallo märkab makset, kui see on mõne korra stabiilse hinnaga korduvalt toimunud: kuumakse puhul kolm kuud järjest. Impordi pangaväljavõte, et kaugemale tagasi vaadata.",
+"· next about {0}":"· järgmine umbes {0}",
+"{0} added to recurring items.":"{0} lisatud püsikirjetesse.",
+"Moving a payment later or adding income before then would fix it.":"Makse hilisemaks nihutamine või sissetuleku lisamine enne seda parandaks selle.",
+"Nothing is planned yet in this period.":"Selle perioodi jaoks pole veel midagi planeeritud.",
+"Money timeline":"Raha ajajoon",
+"Nothing to show yet":"Pole veel midagi näidata",
+"Add bills and income in Upcoming, or set pay per work day, and this shows what happens to your money.":"Lisa arveid ja sissetulekut vaates Tulemas või määra tööpäevatasu ning siin näed, mis sinu rahaga juhtub.",
+"{0} for each work day, plus":"{0} iga tööpäeva eest, pluss",
+"Short by {0}":"Puudu {0}",
+"Left after: {0}":"Pärast jääb: {0}",
+"Payments":"Maksed",
+"Events":"Sündmused",
+"All clear":"Kõik korras",
+"Nothing planned yet":"Midagi pole veel planeeritud",
+"No upcoming items match this filter.":"Sellele filtrile ei vasta ükski tulev kirje.",
+"Add bills, salary, subscriptions and events. Repeating ones are created for you.":"Lisa arveid, palk, tellimusi ja sündmusi. Korduvad luuakse sinu eest.",
+"· paused":"· peatatud",
+"· next":"· järgmine",
+"· ended":"· lõppenud",
+"No recurring items":"Püsikirjeid pole",
+"Create a payment, income or event and choose how often it repeats.":"Loo makse, tulu või sündmus ja vali, kui tihti see kordub.",
+"Mon":"E",
+"Tue":"T",
+"Wed":"K",
+"Thu":"N",
+"Fri":"R",
+"Sat":"L",
+"Sun":"P",
+"Pay for one work day":"Ühe tööpäeva tasu",
+"Leave it empty to turn this off.":"Jäta tühjaks, et see välja lülitada.",
+"work day":"tööpäev",
+"day off":"vaba päev",
+"not working":"ei tööta",
+"Daily pay turned off":"Päevatasu välja lülitatud",
+"Enter an amount like 100.00.":"Sisesta summa, näiteks 100,00.",
+"Tap the days you work on the calendar.":"Puuduta kalendris päevi, mil töötad.",
+"Saved. Your money plan now uses":"Salvestatud. Sinu rahaplaan kasutab nüüd",
+"Language":"Keel",
+"The wording of the app. Estonian was translated by Claude, so tell me about anything that reads oddly.":"Rakenduse keel. Eesti keele tõlkis Claude, nii et anna teada kõigest, mis kõlab imelikult.",
+"Only dates and numbers. The language is set above.":"Ainult kuupäevad ja numbrid. Keel on määratud ülal.",
+"After your goals and the payments planned for the next 30 days, about":"Pärast eesmärkide ja järgmise 30 päeva maksete katmist on sul vaba umbes",
+"is free.":"kasutada.",
+"Everything planned can be paid. After paying, the lowest you’d be is":"Kõik planeeritu on tasutav. Pärast maksmist oleks madalaim saldo",
+"on {1}.":"kuupäeval {1}.",
+"Add budget":"Lisa eelarve",
+"{4} spent":"{4} kulutatud",
+"From account":"Kontolt",
+"account":"konto",
+"accounts":"kontot",
+"charge":"püsimakse",
+"charges":"püsimakset",
+"Your browser isn’t letting Sallo save data (a private window can cause this). Changes will be lost when you close the page.":"Sinu brauser ei lase Sallol andmeid salvestada (põhjuseks võib olla privaatne aken). Muudatused lähevad kaotsi, kui lehe sulged.",
+"Turn your phone upright":"Pööra telefon püsti",
+"{0} used":"{0} kasutatud",
+"{0} progress":"{0} edenemine",
+"Gentle tones for taps and saved changes. Made on your device; nothing is downloaded.":"Õrnad helid puudutuste ja salvestatud muudatuste jaoks. Tekitatakse sinu seadmes; midagi ei laadita alla.",
+"Add your pay for a sharper number":"Lisa oma palk täpsema numbri jaoks",
+"Pound sterling":"Inglise nael",
+"Swedish krona":"Rootsi kroon",
+"Norwegian krone":"Norra kroon",
+"Danish krone":"Taani kroon",
+"Swiss franc":"Šveitsi frank",
+"Polish złoty":"Poola zlott",
+"Czech koruna":"Tšehhi kroon",
+"Japanese yen":"Jaapani jeen",
+"Canadian dollar":"Kanada dollar",
+"Australian dollar":"Austraalia dollar",
+"Euro":"Euro",
+"US dollar":"USA dollar",
+"Electricity":"Elekter",
+"Rent":"Üür",
+"Internet":"Internet",
+"on the {0}":"{0} kuupäeval",
+"monthly":"kord kuus",
+"weekly":"kord nädalas",
+"yearly":"kord aastas",
+"By {0}":"Kuni {0}",
+"{0} transaction":"{0} tehing",
+"{0} transactions":"{0} tehingut",
+"{0} upcoming item":"{0} tulev kirje",
+"{0} upcoming items":"{0} tulevat kirjet",
+"{0} repeating item":"{0} korduv kirje",
+"{0} repeating items":"{0} korduvat kirjet",
+"{0} savings goal":"{0} säästueesmärk",
+"{0} savings goals":"{0} säästueesmärki",
+"{0} budget":"{0} eelarve",
+"{0} budgets":"{0} eelarvet"};
+
+__exports.ET = ET;
+});
+__def("i18n.js", function (__exports) {
+// Wording in other languages. English is what the code is written in; this file swaps it at the point where
+// text is put on the screen. Estonian lives in lang-et.js (generated from i18n/et.tsv).
+// A translation may contain {0}, {1}… for values that the screen fills in, and {1?ut} meaning
+// "insert ut when value 1 is non-empty" (used for plural endings).
+const { ET } = __req("lang-et.js");
+
+const PACKS = { et: ET };
+let lang = 'en', dict = new Map(), patterns = [];
+const cache = new Map();
+const missing = new Set(); // untranslated text seen so far (for finding gaps)
+const missingRuntime = new Set(); // same, for text that arrived already assembled
+
+const norm = (s) => s.replace(/\s+/g, ' ');
+const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const PLACE = /\{(\d+)(?:\?([^}]*))?\}/g;
+
+function setLang(l) {
+  if (l === lang) return;
+  lang = PACKS[l] ? l : 'en';
+  cache.clear();
+  dict = new Map(); patterns = [];
+  const pack = PACKS[lang];
+  if (!pack) return;
+  for (const [k, v] of Object.entries(pack)) {
+    const nk = norm(k);
+    dict.set(nk, v);
+    if (/\{\d+\}/.test(nk) && (nk.replace(/\{\d+\}/g, '').replace(/[^A-Za-z]/g, '').length >= 4 || /^[A-Za-z]/.test(nk))) {
+      const order = [];
+      const src = '^' + esc(nk).replace(/\\\{(\d+)\\\}/g, (_, i) => { order.push(+i); return '([\\s\\S]*?)'; }) + '$';
+      patterns.push({ re: new RegExp(src), order, v, weight: nk.replace(/\{\d+\}/g, '').length });
+    }
+  }
+  patterns.sort((a, b) => b.weight - a.weight);
+}
+const getLang = () => lang;
+const languages = () => [['en', 'English'], ['et', 'Eesti']];
+
+function fill(tpl, args) {
+  return tpl.replace(PLACE, (m, i, pl) => (pl !== undefined ? (args[i] ? pl : '') : (args[i] ?? '')));
+}
+
+/** Translate a piece of text that arrives already assembled (a toast, an error, a label from a list). */
+function tr(s) {
+  if (lang === 'en' || typeof s !== 'string' || !/[A-Za-z]{2}/.test(s)) return s;
+  if (cache.has(s)) return cache.get(s);
+  const m = s.match(/^(\s*)([\s\S]*?)(\s*)$/);
+  const core = norm(m[2]);
+  let out = s;
+  const hit = dict.get(core);
+  if (hit !== undefined && !/\{\d+/.test(hit)) out = m[1] + hit + m[3];
+  else {
+    for (const p of patterns) {
+      const r = p.re.exec(core);
+      if (!r) continue;
+      const args = {};
+      p.order.forEach((idx, j) => { args[idx] = tr(r[j + 1]); });
+      out = m[1] + fill(p.v, args) + m[3];
+      break;
+    }
+  }
+  if (out === s && core.includes(' · ')) { const parts = core.split(' · ').map(tr); if (parts.some((x, i) => x !== core.split(' · ')[i])) out = m[1] + parts.join(' · ') + m[3]; }
+  if (out === s && /^[A-Z][a-z]+ [a-z]/.test(core)) missingRuntime.add(core);
+  if (cache.size > 4000) cache.clear();
+  cache.set(s, out);
+  return out;
+}
+
+/** Look up one static piece of a template, where interpolated values are already written as {n}. */
+function seg(text) {
+  const m = text.match(/^(\s*)([\s\S]*?)(\s*)$/);
+  const core = norm(m[2]);
+  if (!/[A-Za-z]{2}/.test(core.replace(/\{\d+\}/g, ''))) return text;
+  const v = dict.get(core);
+  if (v === undefined) { missing.add(core); return text; }
+  return m[1] + v + m[3];
+}
+const ATTR = /(\b(?:aria-label|title|placeholder|alt)=")([^"]*)(")/g;
+
+/** Turn a template literal's pieces into a list of strings and value slots, translated. */
+function compile(strings) {
+  let T = strings[0];
+  for (let i = 1; i < strings.length; i++) T += `{${i - 1}}` + strings[i];
+  const out = T.split(/(<[^>]*>)/).map((p) => (p.startsWith('<') ? p.replace(ATTR, (_, a, v, q) => a + seg(v) + q) : seg(p))).join('');
+  const parts = []; let last = 0;
+  out.replace(PLACE, (m, i, pl, off) => { parts.push(out.slice(last, off)); parts.push(pl !== undefined ? { i: +i, pl } : { i: +i }); last = off + m.length; return m; });
+  parts.push(out.slice(last));
+  return parts;
+}
+
+__exports.missing = missing;
+__exports.missingRuntime = missingRuntime;
+__exports.PLACE = PLACE;
+__exports.setLang = setLang;
+__exports.getLang = getLang;
+__exports.languages = languages;
+__exports.fill = fill;
+__exports.tr = tr;
+__exports.compile = compile;
+});
 __def("ui/kit.js", function (__exports) {
 // Small UI toolkit: safe HTML templates, icons, formatting, sheets, toasts.
 const { app, S } = __req("ui/ctx.js");
 const { formatMoney, currencyInfo } = __req("money.js");
 const { formatDate } = __req("dates.js");
+const { getLang, tr, compile } = __req("i18n.js");
 
 // ---------- safe html templates (everything interpolated is escaped) ----------
 class Raw { constructor(s) { this.s = s; } toString() { return this.s; } }
 const raw = (s) => new Raw(String(s));
 const esc = (v) => String(v).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const str = (v) => (v instanceof Raw ? v.s : Array.isArray(v) ? v.map(str).join('') : v == null || v === false ? '' : esc(v));
+const compiled = new WeakMap();
 function html(strings, ...vals) {
-  let out = strings[0];
-  vals.forEach((v, i) => { out += str(v) + strings[i + 1]; });
+  if (getLang() === 'en') {
+    let out = strings[0];
+    vals.forEach((v, i) => { out += str(v) + strings[i + 1]; });
+    return new Raw(out);
+  }
+  let c = compiled.get(strings);
+  if (!c || c.lang !== getLang()) { c = { lang: getLang(), parts: compile(strings) }; compiled.set(strings, c); }
+  let out = '';
+  for (const p of c.parts) {
+    if (typeof p === 'string') out += p;
+    else if (p.pl !== undefined) out += str(vals[p.i]) ? p.pl : '';
+    else { const v = vals[p.i]; out += str(typeof v === 'string' ? tr(v) : v); }
+  }
   return new Raw(out);
 }
 const $ = (sel, root = document) => root.querySelector(sel);
@@ -1674,7 +2945,7 @@ function confirmSheet({ title, message, confirmLabel = 'Confirm', danger = false
     wrap.querySelector('[data-act=confirm-no]').addEventListener('click', () => { closeSheet(); });
     wrap.querySelector('[data-act=confirm-yes]').addEventListener('click', () => { finish(true); closeSheet(); });
     const t = wrap.querySelector('#confirm-text');
-    t?.addEventListener('input', () => { wrap.querySelector('[data-act=confirm-yes]').disabled = t.value.trim().toUpperCase() !== requireText.toUpperCase(); });
+    t?.addEventListener('input', () => { wrap.querySelector('[data-act=confirm-yes]').disabled = (v => v !== requireText.toUpperCase() && v !== tr(requireText).toUpperCase())(t.value.trim().toUpperCase()); });
   });
 }
 
@@ -1684,7 +2955,7 @@ function showError(formEl, name, msg) {
   const input = formEl.elements[name];
   const f = input?.closest?.('.field');
   const err = f?.querySelector('.err');
-  if (err) err.textContent = msg || '';
+  if (err) err.textContent = tr(msg || '');
   if (msg) input?.focus?.();
 }
 const clearErrors = (formEl) => $$('.err', formEl).forEach((e) => { e.textContent = ''; });
@@ -2035,6 +3306,7 @@ const { detectCategory } = __req("categorize.js");
 const { buildDemo } = __req("ui/demo.js");
 const { planPicker, readPlan, syncDraft } = __req("ui/plan.js");
 const { monthlyPay } = __req("ui/guard.js");
+const { getLang, languages } = __req("i18n.js");
 
 const REGION_CURRENCY = { US: 'USD', GB: 'GBP', SE: 'SEK', NO: 'NOK', DK: 'DKK', CH: 'CHF', PL: 'PLN', CZ: 'CZK', JP: 'JPY', CA: 'CAD', AU: 'AUD' };
 function guessCurrency() {
@@ -2043,7 +3315,7 @@ function guessCurrency() {
 const ob = { step: 0, currency: null, name: 'Everyday account', type: 'bank', balance: '', accountId: null, pay: { amount: '', freq: 'month', date: '' }, bills: {}, billsDone: false, plan: { income: '', type: '50-30-20', needs: '50', wants: '30', save: '20' } };
 const BILLS = [['rent', 'Rent or mortgage'], ['electricity', 'Electricity'], ['water', 'Water and heating'], ['internet', 'Internet'], ['phone', 'Phone'], ['insurance', 'Insurance'], ['subs', 'Subscriptions']];
 const BILL_NAME = { rent: 'Rent', electricity: 'Electricity', water: 'Water and heating', internet: 'Internet', phone: 'Phone', insurance: 'Insurance', subs: 'Subscriptions' };
-const ordinal = (n) => n + (n % 10 === 1 && n !== 11 ? 'st' : n % 10 === 2 && n !== 12 ? 'nd' : n % 10 === 3 && n !== 13 ? 'rd' : 'th');
+const ordinal = (n) => getLang() === 'et' ? n + '.' : n + (n % 10 === 1 && n !== 11 ? 'st' : n % 10 === 2 && n !== 12 ? 'nd' : n % 10 === 3 && n !== 13 ? 'rd' : 'th');
 // next date on/after today that falls on `day` of a month (day is 1..28 so it always exists)
 function nextOnDay(day) { const t = today(); const { y, m } = parse(t); const a = toIso(y, m, day); if (a >= t) return a; return m === 12 ? toIso(y + 1, 1, day) : toIso(y, m + 1, day); }
 
@@ -2057,7 +3329,8 @@ function onboarding() {
       <div class="stack"><button class="btn primary block" data-act="ob-next">Get started</button>
         <input type="file" id="import-file" data-change="import-file" accept=".json,.sallo,application/json,text/plain" hidden>
         <button class="btn block" data-act="ob-demo">${icon('eye', 18)} Try it with example data</button>
-        <button class="btn block" data-act="import-pick">${icon('upload', 18)} I have a backup to import</button></div></div>` };
+        <button class="btn block" data-act="import-pick">${icon('upload', 18)} I have a backup to import</button></div>
+      <div class="ob-lang" role="group" aria-label="Language">${languages().map(([c, n]) => html`<button type="button" class="pill ${getLang() === c ? 'on' : ''}" data-act="ob-lang" data-lang="${c}" aria-pressed="${getLang() === c}">${n}</button>`)}</div></div>` };
   }
   if (ob.step === 1) {
     const c = currencyInfo(ob.currency);
@@ -2102,6 +3375,7 @@ function onboarding() {
     <button class="btn primary block" data-act="ob-finish">Open Sallo</button></div>` };
 }
 
+actions['ob-lang'] = (el) => { const l = el.dataset.lang; app.store.setSettings({ lang: l, locale: l === 'et' ? 'et-EE' : '' }); };
 actions['ob-next'] = () => { ob.step += 1; };
 actions['ob-back'] = () => { ob.step = Math.max(0, ob.step - 1); };
 actions['ob-skip'] = () => { ob.step = 4; };
@@ -2184,6 +3458,7 @@ __exports.restartOnboarding = restartOnboarding;
 __def("ui/editors.js", function (__exports) {
 // Every add/edit form. Forms are shown in sheets and handled via the `forms` registry.
 const { app } = __req("ui/ctx.js");
+const { tr } = __req("i18n.js");
 const { html, raw, icon, ICON_KEYS, money, dateText, cur, field, segmented, options, openSheet, closeSheet, closeAllSheets, confirmSheet, toast, showError, clearErrors, forms, actions, inputs, changes, $, $$, chip } = __req("ui/kit.js");
 const { parseMinor, minorToPlain } = __req("money.js");
 const { restartOnboarding } = __req("ui/onboarding.js");
@@ -2562,7 +3837,7 @@ actions['account-wipe'] = async (el) => {
   const parts = [n(f.txns, 'transaction', 'transactions'), f.planned ? n(f.planned, 'upcoming item', 'upcoming items') : '', f.rules ? n(f.rules, 'repeating item', 'repeating items') : '', f.goals ? n(f.goals, 'savings goal', 'savings goals') : '', f.budgets ? n(f.budgets, 'budget', 'budgets') : ''].filter(Boolean);
   const ok = await confirmSheet({
     title: 'Delete this account?',
-    message: html`<b>${a.name}</b> and everything done in it will be erased from Sallo: ${parts.join(', ')}.${f.last ? html` Because it’s your only account, you start completely fresh. Your categories and settings stay.` : html` Savings goals and budgets stay.`}<br><br><b>This can’t be undone.</b> You can only get this information back if you’ve saved a backup on your phone or another device. <a href="#/settings/data">Make a backup first</a>.`,
+    message: html`<b>${a.name}</b> and everything done in it will be erased from Sallo: ${parts.map(tr).join(', ')}.${f.last ? html` Because it’s your only account, you start completely fresh. Your categories and settings stay.` : html` Savings goals and budgets stay.`}<br><br><b>This can’t be undone.</b> You can only get this information back if you’ve saved a backup on your phone or another device. <a href="#/settings/data">Make a backup first</a>.`,
     confirmLabel: 'Delete account', danger: true, requireText: 'delete account',
   });
   if (!ok) return;
@@ -3052,6 +4327,138 @@ __exports.buildShareFile = buildShareFile;
 __exports.validateShare = validateShare;
 __exports.applyShare = applyShare;
 });
+__def("subscriptions.js", function (__exports) {
+// Finds charges that repeat on a regular rhythm with a steady price: subscriptions, memberships, instalments.
+// Pure functions: no storage, no screen. Everything is derived from the transactions the app already holds.
+const { addDays, dayDiff } = __req("dates.js");
+
+const PERIODS = [
+  { key: 'week', days: 7, tol: 2, min: 4, unit: 'week', every: 1 },
+  { key: 'fortnight', days: 14, tol: 3, min: 3, unit: 'week', every: 2 },
+  { key: 'month', days: 30.4, tol: 4, min: 3, unit: 'month', every: 1 },
+  { key: 'quarter', days: 91, tol: 8, min: 3, unit: 'month', every: 3 },
+  { key: 'year', days: 365, tol: 14, min: 2, unit: 'year', every: 1 },
+];
+
+/** A stable key for a merchant: letters only, first two real words, lower case. */
+function merchantKey(name) {
+  const words = String(name || '').toLowerCase().normalize('NFKD').replace(/[̀-ͯ]/g, '').replace(/[^a-zäöüõ\s]/g, ' ').split(/\s+/).filter((w) => w.length > 1);
+  return words.slice(0, 2).join(' ');
+}
+
+const median = (a) => { const s = [...a].sort((x, y) => x - y); const m = s.length >> 1; return s.length % 2 ? s[m] : Math.round((s[m - 1] + s[m]) / 2); };
+
+/**
+ * @param txns   all transactions
+ * @param rules  existing recurring rules (so tracked ones are marked)
+ * @param today  'yyyy-MM-dd'
+ * @returns list sorted by yearly cost, biggest first
+ */
+function findSubscriptions(txns, rules, today) {
+  const groups = new Map();
+  for (const t of txns) {
+    if (t.type !== 'expense' || !t.name || !(t.amountMinor > 0)) continue;
+    const k = merchantKey(t.name);
+    if (!k) continue;
+    if (!groups.has(k)) groups.set(k, []);
+    groups.get(k).push(t);
+  }
+  const tracked = new Set((rules || []).filter((r) => r.kind === 'expense').map((r) => merchantKey(r.name)));
+  const out = [];
+  for (const [key, list] of groups) {
+    list.sort((a, b) => a.date.localeCompare(b.date));
+    if (list.length < 2) continue;
+    const amounts = list.map((t) => t.amountMinor), mid = median(amounts);
+    const steady = list.filter((t) => Math.abs(t.amountMinor - mid) <= mid * 0.25);
+    if (steady.length < list.length * 0.7) continue; // prices all over the place: groceries, fuel, coffee
+    const dates = steady.map((t) => t.date);
+    const gaps = []; for (let i = 1; i < dates.length; i++) gaps.push(dayDiff(dates[i], dates[i - 1]));
+    if (!gaps.length) continue;
+    const typical = median(gaps);
+    const per = PERIODS.find((p) => Math.abs(typical - p.days) <= p.tol);
+    if (!per || steady.length < per.min) continue;
+    const onBeat = gaps.filter((g) => Math.abs(g - per.days) <= per.tol * 1.6).length;
+    if (onBeat < gaps.length * 0.75) continue;
+    const last = steady[steady.length - 1];
+    const sinceLast = dayDiff(today, last.date);
+    const monthly = Math.round((last.amountMinor * 30.4375) / per.days);
+    const earlier = median(steady.slice(0, -1).map((t) => t.amountMinor));
+    const changed = steady.length >= 3 && Math.abs(last.amountMinor - earlier) > earlier * 0.03;
+    out.push({
+      key, name: last.name, categoryId: last.categoryId || null, accountId: last.accountId || null,
+      amountMinor: last.amountMinor, period: per.key, unit: per.unit, every: per.every, count: steady.length,
+      firstDate: steady[0].date, lastDate: last.date, nextDate: addDays(last.date, Math.round(per.days)),
+      monthlyMinor: monthly, yearlyMinor: monthly * 12,
+      active: sinceLast <= per.days * 1.6 + 5, tracked: tracked.has(key),
+      priceChange: changed ? { from: earlier, to: last.amountMinor } : null,
+    });
+  }
+  return out.sort((a, b) => Number(b.active) - Number(a.active) || b.yearlyMinor - a.yearlyMinor);
+}
+
+function subscriptionTotals(subs) {
+  const live = subs.filter((s) => s.active);
+  return { count: live.length, monthly: live.reduce((n, s) => n + s.monthlyMinor, 0), yearly: live.reduce((n, s) => n + s.yearlyMinor, 0) };
+}
+
+__exports.merchantKey = merchantKey;
+__exports.findSubscriptions = findSubscriptions;
+__exports.subscriptionTotals = subscriptionTotals;
+});
+__def("ui/subscriptions.js", function (__exports) {
+const { app } = __req("ui/ctx.js");
+const { html, icon, money, dateText, chip, avatar, actions, emptyState, toast } = __req("ui/kit.js");
+const { today } = __req("dates.js");
+const { occurrence } = __req("recurrence.js");
+const { findSubscriptions, subscriptionTotals } = __req("subscriptions.js");
+
+const PERIOD_LABEL = { week: 'weekly', fortnight: 'every 2 weeks', month: 'monthly', quarter: 'every 3 months', year: 'yearly' };
+
+function findAll() {
+  const d = app.store.data;
+  return findSubscriptions(d.txns, d.rules, today());
+}
+
+function subRow(x) {
+  const s = app.store, cat = s.category(x.categoryId);
+  return html`<div class="row ${x.active ? '' : 'dim'}"><div class="row-main sub-main">${avatar(cat?.icon || 'repeat', x.key)}
+    <span class="row-text"><b>${x.name}</b><small>${money(x.amountMinor)} · ${PERIOD_LABEL[x.period]}${x.active ? html` · next about ${dateText(x.nextDate, { day: 'numeric', month: 'short' })}` : html` · last ${dateText(x.lastDate, { day: 'numeric', month: 'short', year: 'numeric' })}`}
+        ${x.priceChange ? html` ${chip(x.priceChange.to > x.priceChange.from ? 'Price went up' : 'Price went down', x.priceChange.to > x.priceChange.from ? 'warn' : 'good')}` : ''}${x.tracked ? html` ${chip('Tracked', 'good')}` : ''}</small></span>
+    <span class="row-amt"><span class="amt out">${money(x.yearlyMinor)}</span><small class="sub-yr">a year</small></span></div>
+    ${x.active && !x.tracked ? html`<button class="quick wide" data-act="sub-track" data-key="${x.key}" aria-label="Track ${x.name} as recurring">${icon('repeat', 18)}</button>` : ''}</div>`;
+}
+
+function subscriptions() {
+  const subs = findAll(), tot = subscriptionTotals(subs);
+  const live = subs.filter((x) => x.active), stopped = subs.filter((x) => !x.active);
+  return {
+    html: html`
+    <header class="ph"><button class="icon-btn" data-act="back" aria-label="Back">${icon('back')}</button><h1>Subscriptions</h1><div class="ph-right"></div></header>
+    ${subs.length ? html`
+      <section class="card sub-hero"><span class="sl-k">Active subscriptions and regular charges</span>
+        <b class="sl-v">${money(tot.monthly)} <small>a month</small></b>
+        <span class="sl-s">${tot.count} ${tot.count === 1 ? 'charge' : 'charges'} · ${money(tot.yearly)} a year</span></section>
+      ${live.length ? html`<section class="group"><div class="card-head sec"><h2>Still being charged</h2></div><div class="card flush list">${live.map(subRow)}</div>
+        <p class="muted small-p pad">Tap the repeat button on a row to add it to your recurring items, so it shows up in Upcoming and in your safe-to-spend number.</p></section>` : ''}
+      ${stopped.length ? html`<section class="group"><div class="card-head sec"><h2>Looks like these stopped</h2></div><div class="card flush list">${stopped.map(subRow)}</div></section>` : ''}
+      <p class="muted small-p pad">Sallo looks for charges with the same name, a similar price and a steady rhythm in your own transactions. It can miss some and can occasionally guess wrong. Nothing leaves your device.</p>`
+    : emptyState('No regular charges found yet', 'Sallo spots a charge once it has repeated a few times at a steady price: three months in a row for a monthly one. Import a bank statement to look back further.', html`<a class="btn primary" href="#/settings/bank">Import a bank statement</a>`)}`,
+  };
+}
+
+actions['sub-track'] = (el) => {
+  const s = app.store, x = findAll().find((y) => y.key === el.dataset.key);
+  if (!x) return;
+  const t = today();
+  let n = 1, start = occurrence(x.lastDate, x.unit, x.every, n);
+  while (start < t && n < 500) { n++; start = occurrence(x.lastDate, x.unit, x.every, n); }
+  s.addRule({ kind: 'expense', name: x.name, amountMinor: x.amountMinor, categoryId: x.categoryId, accountId: x.accountId, startDate: start, unit: x.unit, every: x.every });
+  toast(`${x.name} added to recurring items.`);
+};
+
+__exports.findAll = findAll;
+__exports.subscriptions = subscriptions;
+});
 __def("ui/overview.js", function (__exports) {
 const { app } = __req("ui/ctx.js");
 const { html, raw, icon, avatar, money, dateText, pageHeader, progress, chip, actions, badge, emptyState } = __req("ui/kit.js");
@@ -3062,6 +4469,8 @@ const { guardFor, guardLines, guardHeadline, skipRuleId } = __req("ui/guard.js")
 const { planCard } = __req("ui/plan.js");
 const { ledger } = __req("household.js");
 const { ACCOUNT_ICON } = __req("ui/editors.js");
+const { findAll } = __req("ui/subscriptions.js");
+const { subscriptionTotals } = __req("subscriptions.js");
 
 // distinct, calm colours that stay readable on both light and dark cards
 const SLICE_COLORS = ['#8A7090', '#A4AF69', '#C98B5E', '#5F8FB8', '#C77D96', '#4F8A6A', '#D1A24A', '#7C79C2'];
@@ -3142,6 +4551,7 @@ function overview() {
     if (nextUp) sl.push(html`<a class="slide" href="#/upcoming"><span class="sl-k">Next up</span><b class="sl-v">${nextUp.name}</b><span class="sl-s">${money(nextUp.amountMinor)} · ${dateText(nextUp.date, { weekday: 'short', day: 'numeric', month: 'short' })}</span></a>`);
     sl.push(html`<a class="slide" href="#/insights"><span class="sl-k">${isCurrent ? 'Spent this period' : periodLabel(p, set.monthStart, set.locale)}</span><b class="sl-v">${money(tot.expense)}</b><span class="sl-s">${money(tot.income)} came in</span></a>`);
     if (topGoal) sl.push(html`<a class="slide" href="#/goal/${topGoal.g.id}"><span class="sl-k">${topGoal.g.name}</span><b class="sl-v">${topGoal.gp.pct}%</b>${progress(topGoal.gp.pct, 'sage', topGoal.g.name)}<span class="sl-s">${money(topGoal.gp.saved)} of ${money(topGoal.g.targetMinor)}</span></a>`);
+    { const st = subscriptionTotals(findAll()); if (st.count) sl.push(html`<a class="slide" href="#/subscriptions"><span class="sl-k">Subscriptions</span><b class="sl-v">${money(st.monthly)}</b><span class="sl-s">a month across ${st.count} regular ${st.count === 1 ? 'charge' : 'charges'}</span></a>`); }
     if (dt.owe || dt.owed) sl.push(html`<a class="slide" href="#/debts"><span class="sl-k">${dt.owe ? 'You owe' : 'Owed to you'}</span><b class="sl-v">${money(dt.owe || dt.owed)}</b><span class="sl-s">${dt.owe && dt.owed ? `${money(dt.owed)} owed to you` : 'Debts and loans'}</span></a>`);
     if (set.household) { const h = set.household; const l = ledger({ household: h, mine: d.txns.filter((x) => x.shared && x.type === 'expense'), theirs: d.sharedIn, start: p.start, endExclusive: p.endExclusive }); const her = h.config.names[h.partnerId];
       sl.push(html`<a class="slide" href="#/household"><span class="sl-k">With ${her}</span><b class="sl-v">${money(l.total)}</b><span class="sl-s">${!l.total || !l.balance ? 'You’re even' : l.balance > 0 ? `${her} owes you ${money(l.balance)}` : `You owe ${her} ${money(-l.balance)}`}</span></a>`); }
@@ -3747,6 +5157,7 @@ __exports.workPayCard = workPayCard;
 });
 __def("ui/settings.js", function (__exports) {
 const { app } = __req("ui/ctx.js");
+const { languages } = __req("i18n.js");
 const { html, icon, money, dateText, pageHeader, actions, forms, changes, emptyState, progress, chip, badge, field, options, openSheet, closeSheet, confirmSheet, toast, showError, $ } = __req("ui/kit.js");
 const C = __req("calc.js");
 const { CURRENCIES, parseMinor, minorToPlain } = __req("money.js");
@@ -3779,6 +5190,7 @@ function settings() {
       ${link('#/settings/categories', 'tag', 'Categories')}
       ${link('#/settings/budgets', 'target', 'Budgets', `${s.data.budgets.length} set`)}
       ${link('#/recurring', 'repeat', 'Recurring items', `${s.data.rules.length} total`)}
+      ${link('#/subscriptions', 'search', 'Subscriptions', 'Find regular charges in your spending')}
     </div>
     <div class="list card flush">
       ${link('#/settings/data', 'download', 'Backup, import and export', set.lastExportAt ? 'Last backup ' + dateText(set.lastExportAt.slice(0, 10), { day: 'numeric', month: 'short', year: 'numeric' }) : 'No backup yet')}
@@ -3795,8 +5207,9 @@ function preferences() {
   return {
     html: html`${back('Preferences')}
     <form class="card" data-change="pref" novalidate>
+      ${field('Language', html`<select id="p-lang" name="lang">${options(languages(), set.lang || 'en')}</select>`, 'The wording of the app. Estonian was translated by Claude, so tell me about anything that reads oddly.', 'p-lang')}
       ${field('Currency', html`<select id="p-cur" name="currency">${options(CURRENCIES.map((c) => [c.code, `${c.code} · ${c.name}`]), set.currency)}</select>`, 'Changing it relabels your amounts. It does not convert them.', 'p-cur')}
-      ${field('Number and date format', html`<select id="p-loc" name="locale">${options(LOCALES, set.locale)}</select>`, 'The app’s wording stays in English.', 'p-loc')}
+      ${field('Number and date format', html`<select id="p-loc" name="locale">${options(LOCALES, set.locale)}</select>`, 'Only dates and numbers. The language is set above.', 'p-loc')}
       ${field('Week starts on', html`<select id="p-ws" name="weekStart">${options([['1', 'Monday'], ['7', 'Sunday'], ['6', 'Saturday']], String(set.weekStart))}</select>`, '', 'p-ws')}
       ${field('Month starts on day', html`<select id="p-ms" name="monthStart">${options(Array.from({ length: 28 }, (_, i) => [String(i + 1), String(i + 1)]), String(set.monthStart))}</select>`, 'Set this to your payday and your “month” will run from then.', 'p-ms')}
       ${field('Theme', html`<select id="p-th" name="theme">${options([['system', 'Match my device'], ['light', 'Light'], ['dark', 'Dark']], set.theme)}</select>`, '', 'p-th')}
@@ -3808,11 +5221,17 @@ function preferences() {
     </form>`,
   };
 }
+// Picking Estonian also switches dates and numbers to Estonian format, unless the person chose a format themselves.
+function localeFor(fd) {
+  const set = app.store.settings, lang = fd.get('lang') || 'en', loc = fd.get('locale');
+  if (lang !== (set.lang || 'en') && loc === set.locale) { if (lang === 'et' && !loc) return 'et-EE'; if (lang === 'en' && loc === 'et-EE') return ''; }
+  return loc;
+}
 changes['pref'] = (el) => {
   const form = el.closest('form');
   const fd = new FormData(form);
   app.store.setSettings({
-    currency: fd.get('currency'), locale: fd.get('locale'), weekStart: Number(fd.get('weekStart')),
+    currency: fd.get('currency'), locale: localeFor(fd), lang: fd.get('lang') || 'en', weekStart: Number(fd.get('weekStart')),
     monthStart: Number(fd.get('monthStart')), theme: fd.get('theme'), sound: fd.get('sound') !== 'off', nudges: fd.get('nudges') !== 'off', guard: fd.get('guard') !== 'off', wantsLimit: Number(fd.get('wantsLimit')) || 30, orientation: fd.get('orientation') === 'portrait' ? 'portrait' : 'auto',
   });
   app.ui.overviewShift = 0; app.ui.activityShift = 0;
@@ -5025,8 +6444,11 @@ const { bankImport } = __req("ui/bankimport.js");
 const { debts, debtDetail, checkSettled } = __req("ui/debts.js");
 const { household } = __req("ui/household.js");
 const { afford } = __req("ui/afford.js");
+const { subscriptions } = __req("ui/subscriptions.js");
 const { showLock } = __req("ui/lock.js");
 const { today } = __req("dates.js");
+const { setLang, tr, missing, missingRuntime } = __req("i18n.js");
+app.missing = missing; app.missingRuntime = missingRuntime;
 const { play, setSoundEnabled } = __req("sound.js");
 
 app.persist = persist;
@@ -5038,7 +6460,7 @@ const ROUTES = [
   [/^\/settings$/, St.settings, 'overview'], [/^\/settings\/preferences$/, St.preferences, 'overview'],
   [/^\/settings\/pay$/, St.payScreen, 'overview'], [/^\/settings\/plan$/, planScreen, 'overview'], [/^\/timeline$/, timeline, 'overview'], [/^\/settings\/accounts$/, St.accountsScreen, 'overview'], [/^\/settings\/categories$/, St.categoriesScreen, 'overview'],
   [/^\/settings\/budgets$/, St.budgetsScreen, 'overview'], [/^\/settings\/security$/, St.security, 'overview'],
-  [/^\/settings\/data$/, St.dataScreen, 'overview'], [/^\/settings\/bank$/, bankImport, 'overview'], [/^\/household$/, household, 'overview'], [/^\/afford$/, afford, 'overview'], [/^\/debts$/, debts, 'savings'], [/^\/debt\/(.+)$/, (m) => debtDetail({ id: m[1] }), 'savings'], [/^\/settings\/about$/, St.about, 'overview'],
+  [/^\/settings\/data$/, St.dataScreen, 'overview'], [/^\/settings\/bank$/, bankImport, 'overview'], [/^\/household$/, household, 'overview'], [/^\/afford$/, afford, 'overview'], [/^\/subscriptions$/, subscriptions, 'overview'], [/^\/debts$/, debts, 'savings'], [/^\/debt\/(.+)$/, (m) => debtDetail({ id: m[1] }), 'savings'], [/^\/settings\/about$/, St.about, 'overview'],
 ];
 const TITLES = { overview: 'Overview', activity: 'Activity', calendar: 'Calendar', upcoming: 'Upcoming', savings: 'Savings' };
 
@@ -5051,6 +6473,16 @@ function render() {
 }
 app.render = render;
 
+const LANG_KEY = 'sallo-lang';
+function rememberLang(l) { try { localStorage.setItem(LANG_KEY, l); } catch { /* private window */ } }
+try { setLang(localStorage.getItem(LANG_KEY) || 'en'); } catch { /* keep English */ } // so the lock screen speaks the right language too
+function applyLang() {
+  const l = app.store?.settings.lang || 'en';
+  setLang(l); rememberLang(l);
+  document.documentElement.lang = l;
+  for (const el of $$('#tabs span, #storage-banner, #rotate p')) { el.dataset.en ||= el.textContent; el.textContent = tr(el.dataset.en); }
+}
+
 function applyTheme() {
   const t = app.store?.settings.theme;
   const root = document.documentElement;
@@ -5062,6 +6494,7 @@ function applyTheme() {
 function doRender() {
   if (!app.store) return;
   applyTheme();
+  applyLang();
   setSoundEnabled(app.store.settings.sound !== false);
   const portrait = app.store.settings.orientation === 'portrait';
   document.body.classList.toggle('portrait-only', portrait);
@@ -5098,7 +6531,7 @@ function doRender() {
     window.scrollTo(0, 0);
     const h1 = $('#view h1');
     if (h1) { h1.tabIndex = -1; h1.focus({ preventScroll: true }); }
-    document.title = onboarding_ ? 'Sallo' : (TITLES[tab] ? TITLES[tab] + ' · ' : '') + 'Sallo';
+    document.title = onboarding_ ? 'Sallo' : (TITLES[tab] ? tr(TITLES[tab]) + ' · ' : '') + 'Sallo';
     app.route = hash;
   }
   const banner = $('#storage-banner');
@@ -5188,7 +6621,7 @@ app.lockNow = async () => {
 async function boot() {
   const r = await persist.init();
   if (r.state === 'locked') { showLock(start); }
-  else if (r.state === 'empty') { const d = emptyData(); await persist.createFirst(d); start(d); }
+  else if (r.state === 'empty') { const d = emptyData(); if (/^et/i.test(navigator.language || '')) { d.settings.lang = 'et'; d.settings.locale = 'et-EE'; } await persist.createFirst(d); start(d); }
   else start(r.data);
   registerSW();
 }
@@ -5281,6 +6714,7 @@ boot().catch((err) => {
 window.__sallo = app; // handy for debugging in the console; holds no secrets beyond what is already on screen
 
 __exports.render = render;
+__exports.rememberLang = rememberLang;
 });
 __req("app.js");
 })();

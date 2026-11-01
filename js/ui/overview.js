@@ -7,6 +7,8 @@ import { guardFor, guardLines, guardHeadline, skipRuleId } from './guard.js';
 import { planCard } from './plan.js';
 import { ledger } from '../household.js';
 import { ACCOUNT_ICON } from './editors.js';
+import { findAll } from './subscriptions.js';
+import { subscriptionTotals } from '../subscriptions.js';
 
 // distinct, calm colours that stay readable on both light and dark cards
 export const SLICE_COLORS = ['#8A7090', '#A4AF69', '#C98B5E', '#5F8FB8', '#C77D96', '#4F8A6A', '#D1A24A', '#7C79C2'];
@@ -87,6 +89,7 @@ export function overview() {
     if (nextUp) sl.push(html`<a class="slide" href="#/upcoming"><span class="sl-k">Next up</span><b class="sl-v">${nextUp.name}</b><span class="sl-s">${money(nextUp.amountMinor)} · ${dateText(nextUp.date, { weekday: 'short', day: 'numeric', month: 'short' })}</span></a>`);
     sl.push(html`<a class="slide" href="#/insights"><span class="sl-k">${isCurrent ? 'Spent this period' : periodLabel(p, set.monthStart, set.locale)}</span><b class="sl-v">${money(tot.expense)}</b><span class="sl-s">${money(tot.income)} came in</span></a>`);
     if (topGoal) sl.push(html`<a class="slide" href="#/goal/${topGoal.g.id}"><span class="sl-k">${topGoal.g.name}</span><b class="sl-v">${topGoal.gp.pct}%</b>${progress(topGoal.gp.pct, 'sage', topGoal.g.name)}<span class="sl-s">${money(topGoal.gp.saved)} of ${money(topGoal.g.targetMinor)}</span></a>`);
+    { const st = subscriptionTotals(findAll()); if (st.count) sl.push(html`<a class="slide" href="#/subscriptions"><span class="sl-k">Subscriptions</span><b class="sl-v">${money(st.monthly)}</b><span class="sl-s">a month across ${st.count} regular ${st.count === 1 ? 'charge' : 'charges'}</span></a>`); }
     if (dt.owe || dt.owed) sl.push(html`<a class="slide" href="#/debts"><span class="sl-k">${dt.owe ? 'You owe' : 'Owed to you'}</span><b class="sl-v">${money(dt.owe || dt.owed)}</b><span class="sl-s">${dt.owe && dt.owed ? `${money(dt.owed)} owed to you` : 'Debts and loans'}</span></a>`);
     if (set.household) { const h = set.household; const l = ledger({ household: h, mine: d.txns.filter((x) => x.shared && x.type === 'expense'), theirs: d.sharedIn, start: p.start, endExclusive: p.endExclusive }); const her = h.config.names[h.partnerId];
       sl.push(html`<a class="slide" href="#/household"><span class="sl-k">With ${her}</span><b class="sl-v">${money(l.total)}</b><span class="sl-s">${!l.total || !l.balance ? 'You’re even' : l.balance > 0 ? `${her} owes you ${money(l.balance)}` : `You owe ${her} ${money(-l.balance)}`}</span></a>`); }

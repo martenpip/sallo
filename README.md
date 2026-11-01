@@ -49,3 +49,12 @@ Import can replace everything or combine (newest edit of each item wins).
 - **To install on a phone or computer**, host the folder over HTTPS (GitHub Pages: the included workflow deploys it; set Settings → Pages → Source to "GitHub Actions") and use Add to Home Screen / Install.
 - After editing anything in `js/`, run `node build.mjs` to regenerate the bundle (no dependencies needed).
 - Layout: bottom tabs on phones, side navigation and multi-column screens from 900px wide.
+
+
+## Languages
+
+Sallo speaks English and Estonian. Pick the language in Preferences (or on the first screen). The English text is in the code; the Estonian is in `i18n/et.tsv`, one `English<TAB>Estonian` pair per line. After editing it run `node tools/gen-lang.mjs` and then `node build.mjs`. A translation can contain `{0}`, `{1}` for values the screen fills in, and `{1?ut}` to add an ending only when value 1 is not empty (used for plurals). Estonian was translated by Claude and has not been proofread by a native speaker.
+
+## Subscriptions
+
+Settings → Subscriptions looks through your own transactions for charges with the same name, a similar price and a steady rhythm (weekly, monthly, yearly…) and lists them with monthly and yearly cost. One tap adds a found charge to your recurring items. Detection is in `js/subscriptions.js`.

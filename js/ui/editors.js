@@ -1,5 +1,6 @@
 // Every add/edit form. Forms are shown in sheets and handled via the `forms` registry.
 import { app } from './ctx.js';
+import { tr } from '../i18n.js';
 import {
   html, raw, icon, ICON_KEYS, money, dateText, cur, field, segmented, options, openSheet, closeSheet, closeAllSheets, confirmSheet,
   toast, showError, clearErrors, forms, actions, inputs, changes, $, $$, chip,
@@ -381,7 +382,7 @@ actions['account-wipe'] = async (el) => {
   const parts = [n(f.txns, 'transaction', 'transactions'), f.planned ? n(f.planned, 'upcoming item', 'upcoming items') : '', f.rules ? n(f.rules, 'repeating item', 'repeating items') : '', f.goals ? n(f.goals, 'savings goal', 'savings goals') : '', f.budgets ? n(f.budgets, 'budget', 'budgets') : ''].filter(Boolean);
   const ok = await confirmSheet({
     title: 'Delete this account?',
-    message: html`<b>${a.name}</b> and everything done in it will be erased from Sallo: ${parts.join(', ')}.${f.last ? html` Because it’s your only account, you start completely fresh. Your categories and settings stay.` : html` Savings goals and budgets stay.`}<br><br><b>This can’t be undone.</b> You can only get this information back if you’ve saved a backup on your phone or another device. <a href="#/settings/data">Make a backup first</a>.`,
+    message: html`<b>${a.name}</b> and everything done in it will be erased from Sallo: ${parts.map(tr).join(', ')}.${f.last ? html` Because it’s your only account, you start completely fresh. Your categories and settings stay.` : html` Savings goals and budgets stay.`}<br><br><b>This can’t be undone.</b> You can only get this information back if you’ve saved a backup on your phone or another device. <a href="#/settings/data">Make a backup first</a>.`,
     confirmLabel: 'Delete account', danger: true, requireText: 'delete account',
   });
   if (!ok) return;

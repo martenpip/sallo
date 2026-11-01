@@ -6,6 +6,7 @@ import { detectCategory } from '../categorize.js';
 import { buildDemo } from './demo.js';
 import { planPicker, readPlan, syncDraft } from './plan.js';
 import { monthlyPay } from './guard.js';
+import { getLang, languages } from '../i18n.js';
 
 const REGION_CURRENCY = { US: 'USD', GB: 'GBP', SE: 'SEK', NO: 'NOK', DK: 'DKK', CH: 'CHF', PL: 'PLN', CZ: 'CZK', JP: 'JPY', CA: 'CAD', AU: 'AUD' };
 function guessCurrency() {
@@ -14,7 +15,7 @@ function guessCurrency() {
 const ob = { step: 0, currency: null, name: 'Everyday account', type: 'bank', balance: '', accountId: null, pay: { amount: '', freq: 'month', date: '' }, bills: {}, billsDone: false, plan: { income: '', type: '50-30-20', needs: '50', wants: '30', save: '20' } };
 const BILLS = [['rent', 'Rent or mortgage'], ['electricity', 'Electricity'], ['water', 'Water and heating'], ['internet', 'Internet'], ['phone', 'Phone'], ['insurance', 'Insurance'], ['subs', 'Subscriptions']];
 const BILL_NAME = { rent: 'Rent', electricity: 'Electricity', water: 'Water and heating', internet: 'Internet', phone: 'Phone', insurance: 'Insurance', subs: 'Subscriptions' };
-const ordinal = (n) => n + (n % 10 === 1 && n !== 11 ? 'st' : n % 10 === 2 && n !== 12 ? 'nd' : n % 10 === 3 && n !== 13 ? 'rd' : 'th');
+const ordinal = (n) => getLang() === 'et' ? n + '.' : n + (n % 10 === 1 && n !== 11 ? 'st' : n % 10 === 2 && n !== 12 ? 'nd' : n % 10 === 3 && n !== 13 ? 'rd' : 'th');
 // next date on/after today that falls on `day` of a month (day is 1..28 so it always exists)
 function nextOnDay(day) { const t = today(); const { y, m } = parse(t); const a = toIso(y, m, day); if (a >= t) return a; return m === 12 ? toIso(y + 1, 1, day) : toIso(y, m + 1, day); }
 
@@ -28,7 +29,8 @@ export function onboarding() {
       <div class="stack"><button class="btn primary block" data-act="ob-next">Get started</button>
         <input type="file" id="import-file" data-change="import-file" accept=".json,.sallo,application/json,text/plain" hidden>
         <button class="btn block" data-act="ob-demo">${icon('eye', 18)} Try it with example data</button>
-        <button class="btn block" data-act="import-pick">${icon('upload', 18)} I have a backup to import</button></div></div>` };
+        <button class="btn block" data-act="import-pick">${icon('upload', 18)} I have a backup to import</button></div>
+      <div class="ob-lang" role="group" aria-label="Language">${languages().map(([c, n]) => html`<button type="button" class="pill ${getLang() === c ? 'on' : ''}" data-act="ob-lang" data-lang="${c}" aria-pressed="${getLang() === c}">${n}</button>`)}</div></div>` };
   }
   if (ob.step === 1) {
     const c = currencyInfo(ob.currency);
@@ -73,6 +75,7 @@ export function onboarding() {
     <button class="btn primary block" data-act="ob-finish">Open Sallo</button></div>` };
 }
 
+actions['ob-lang'] = (el) => { const l = el.dataset.lang; app.store.setSettings({ lang: l, locale: l === 'et' ? 'et-EE' : '' }); };
 actions['ob-next'] = () => { ob.step += 1; };
 actions['ob-back'] = () => { ob.step = Math.max(0, ob.step - 1); };
 actions['ob-skip'] = () => { ob.step = 4; };

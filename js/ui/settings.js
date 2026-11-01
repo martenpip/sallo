@@ -1,4 +1,5 @@
 import { app } from './ctx.js';
+import { languages } from '../i18n.js';
 import {
   html, icon, money, dateText, pageHeader, actions, forms, changes, emptyState, progress, chip, badge, field, options,
   openSheet, closeSheet, confirmSheet, toast, showError, $,
@@ -34,6 +35,7 @@ export function settings() {
       ${link('#/settings/categories', 'tag', 'Categories')}
       ${link('#/settings/budgets', 'target', 'Budgets', `${s.data.budgets.length} set`)}
       ${link('#/recurring', 'repeat', 'Recurring items', `${s.data.rules.length} total`)}
+      ${link('#/subscriptions', 'search', 'Subscriptions', 'Find regular charges in your spending')}
     </div>
     <div class="list card flush">
       ${link('#/settings/data', 'download', 'Backup, import and export', set.lastExportAt ? 'Last backup ' + dateText(set.lastExportAt.slice(0, 10), { day: 'numeric', month: 'short', year: 'numeric' }) : 'No backup yet')}
@@ -50,8 +52,9 @@ export function preferences() {
   return {
     html: html`${back('Preferences')}
     <form class="card" data-change="pref" novalidate>
+      ${field('Language', html`<select id="p-lang" name="lang">${options(languages(), set.lang || 'en')}</select>`, 'The wording of the app. Estonian was translated by Claude, so tell me about anything that reads oddly.', 'p-lang')}
       ${field('Currency', html`<select id="p-cur" name="currency">${options(CURRENCIES.map((c) => [c.code, `${c.code} · ${c.name}`]), set.currency)}</select>`, 'Changing it relabels your amounts. It does not convert them.', 'p-cur')}
-      ${field('Number and date format', html`<select id="p-loc" name="locale">${options(LOCALES, set.locale)}</select>`, 'The app’s wording stays in English.', 'p-loc')}
+      ${field('Number and date format', html`<select id="p-loc" name="locale">${options(LOCALES, set.locale)}</select>`, 'Only dates and numbers. The language is set above.', 'p-loc')}
       ${field('Week starts on', html`<select id="p-ws" name="weekStart">${options([['1', 'Monday'], ['7', 'Sunday'], ['6', 'Saturday']], String(set.weekStart))}</select>`, '', 'p-ws')}
       ${field('Month starts on day', html`<select id="p-ms" name="monthStart">${options(Array.from({ length: 28 }, (_, i) => [String(i + 1), String(i + 1)]), String(set.monthStart))}</select>`, 'Set this to your payday and your “month” will run from then.', 'p-ms')}
       ${field('Theme', html`<select id="p-th" name="theme">${options([['system', 'Match my device'], ['light', 'Light'], ['dark', 'Dark']], set.theme)}</select>`, '', 'p-th')}
@@ -63,11 +66,17 @@ export function preferences() {
     </form>`,
   };
 }
+// Picking Estonian also switches dates and numbers to Estonian format, unless the person chose a format themselves.
+function localeFor(fd) {
+  const set = app.store.settings, lang = fd.get('lang') || 'en', loc = fd.get('locale');
+  if (lang !== (set.lang || 'en') && loc === set.locale) { if (lang === 'et' && !loc) return 'et-EE'; if (lang === 'en' && loc === 'et-EE') return ''; }
+  return loc;
+}
 changes['pref'] = (el) => {
   const form = el.closest('form');
   const fd = new FormData(form);
   app.store.setSettings({
-    currency: fd.get('currency'), locale: fd.get('locale'), weekStart: Number(fd.get('weekStart')),
+    currency: fd.get('currency'), locale: localeFor(fd), lang: fd.get('lang') || 'en', weekStart: Number(fd.get('weekStart')),
     monthStart: Number(fd.get('monthStart')), theme: fd.get('theme'), sound: fd.get('sound') !== 'off', nudges: fd.get('nudges') !== 'off', guard: fd.get('guard') !== 'off', wantsLimit: Number(fd.get('wantsLimit')) || 30, orientation: fd.get('orientation') === 'portrait' ? 'portrait' : 'auto',
   });
   app.ui.overviewShift = 0; app.ui.activityShift = 0;

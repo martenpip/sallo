@@ -19,8 +19,11 @@ import { bankImport } from './ui/bankimport.js';
 import { debts, debtDetail, checkSettled } from './ui/debts.js';
 import { household } from './ui/household.js';
 import { afford } from './ui/afford.js';
+import { subscriptions } from './ui/subscriptions.js';
 import { showLock } from './ui/lock.js';
 import { today } from './dates.js';
+import { setLang, tr, missing, missingRuntime } from './i18n.js';
+app.missing = missing; app.missingRuntime = missingRuntime;
 import { play, setSoundEnabled } from './sound.js';
 
 app.persist = persist;
@@ -32,7 +35,7 @@ const ROUTES = [
   [/^\/settings$/, St.settings, 'overview'], [/^\/settings\/preferences$/, St.preferences, 'overview'],
   [/^\/settings\/pay$/, St.payScreen, 'overview'], [/^\/settings\/plan$/, planScreen, 'overview'], [/^\/timeline$/, timeline, 'overview'], [/^\/settings\/accounts$/, St.accountsScreen, 'overview'], [/^\/settings\/categories$/, St.categoriesScreen, 'overview'],
   [/^\/settings\/budgets$/, St.budgetsScreen, 'overview'], [/^\/settings\/security$/, St.security, 'overview'],
-  [/^\/settings\/data$/, St.dataScreen, 'overview'], [/^\/settings\/bank$/, bankImport, 'overview'], [/^\/household$/, household, 'overview'], [/^\/afford$/, afford, 'overview'], [/^\/debts$/, debts, 'savings'], [/^\/debt\/(.+)$/, (m) => debtDetail({ id: m[1] }), 'savings'], [/^\/settings\/about$/, St.about, 'overview'],
+  [/^\/settings\/data$/, St.dataScreen, 'overview'], [/^\/settings\/bank$/, bankImport, 'overview'], [/^\/household$/, household, 'overview'], [/^\/afford$/, afford, 'overview'], [/^\/subscriptions$/, subscriptions, 'overview'], [/^\/debts$/, debts, 'savings'], [/^\/debt\/(.+)$/, (m) => debtDetail({ id: m[1] }), 'savings'], [/^\/settings\/about$/, St.about, 'overview'],
 ];
 const TITLES = { overview: 'Overview', activity: 'Activity', calendar: 'Calendar', upcoming: 'Upcoming', savings: 'Savings' };
 
@@ -45,6 +48,16 @@ export function render() {
 }
 app.render = render;
 
+const LANG_KEY = 'sallo-lang';
+export function rememberLang(l) { try { localStorage.setItem(LANG_KEY, l); } catch { /* private window */ } }
+try { setLang(localStorage.getItem(LANG_KEY) || 'en'); } catch { /* keep English */ } // so the lock screen speaks the right language too
+function applyLang() {
+  const l = app.store?.settings.lang || 'en';
+  setLang(l); rememberLang(l);
+  document.documentElement.lang = l;
+  for (const el of $$('#tabs span, #storage-banner, #rotate p')) { el.dataset.en ||= el.textContent; el.textContent = tr(el.dataset.en); }
+}
+
 function applyTheme() {
   const t = app.store?.settings.theme;
   const root = document.documentElement;
@@ -56,6 +69,7 @@ function applyTheme() {
 function doRender() {
   if (!app.store) return;
   applyTheme();
+  applyLang();
   setSoundEnabled(app.store.settings.sound !== false);
   const portrait = app.store.settings.orientation === 'portrait';
   document.body.classList.toggle('portrait-only', portrait);
@@ -92,7 +106,7 @@ function doRender() {
     window.scrollTo(0, 0);
     const h1 = $('#view h1');
     if (h1) { h1.tabIndex = -1; h1.focus({ preventScroll: true }); }
-    document.title = onboarding_ ? 'Sallo' : (TITLES[tab] ? TITLES[tab] + ' · ' : '') + 'Sallo';
+    document.title = onboarding_ ? 'Sallo' : (TITLES[tab] ? tr(TITLES[tab]) + ' · ' : '') + 'Sallo';
     app.route = hash;
   }
   const banner = $('#storage-banner');
@@ -182,7 +196,7 @@ app.lockNow = async () => {
 async function boot() {
   const r = await persist.init();
   if (r.state === 'locked') { showLock(start); }
-  else if (r.state === 'empty') { const d = emptyData(); await persist.createFirst(d); start(d); }
+  else if (r.state === 'empty') { const d = emptyData(); if (/^et/i.test(navigator.language || '')) { d.settings.lang = 'et'; d.settings.locale = 'et-EE'; } await persist.createFirst(d); start(d); }
   else start(r.data);
   registerSW();
 }

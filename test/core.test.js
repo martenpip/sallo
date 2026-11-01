@@ -329,3 +329,39 @@ test('can I afford it: yes, tight, no, and the earliest date', () => {
   const wp = { dailyMinor: 10000, weekdays: [1, 2, 3, 4, 5], off: [], extra: [] };
   assert.equal(affordCheck({ ...data, workPay: wp }, { price: 70000, date: t, today: t }).verdict, 'yes');
 });
+
+import { findSubscriptions, subscriptionTotals, merchantKey } from '../js/subscriptions.js';
+test('subscriptions: finds steady monthly charges, ignores groceries', () => {
+  const tx = (name, date, amountMinor) => ({ id: name + date, type: 'expense', name, date, amountMinor, accountId: 'a' });
+  const txns = [
+    tx('Netflix.com 1234', '2026-07-05', 1299), tx('NETFLIX.COM 9921', '2026-08-05', 1299), tx('Netflix.com', '2026-09-05', 1299), tx('Netflix.com', '2026-10-05', 1499),
+    tx('Lidl', '2026-10-01', 2310), tx('Lidl', '2026-10-08', 4120), tx('Lidl', '2026-10-15', 1500), tx('Lidl', '2026-10-22', 6800),
+    tx('Gym Club', '2026-05-02', 3500), tx('Gym Club', '2026-06-02', 3500), tx('Gym Club', '2026-07-02', 3500),
+    tx('Yearly Cloud', '2025-10-20', 9900), tx('Yearly Cloud', '2026-10-20', 9900),
+  ];
+  const subs = findSubscriptions(txns, [{ kind: 'expense', name: 'Gym Club' }], '2026-10-30');
+  const by = Object.fromEntries(subs.map((s) => [s.key, s]));
+  assert.ok(by['netflix com'] && by['netflix com'].period === 'month' && by['netflix com'].active);
+  assert.equal(by['netflix com'].priceChange.to, 1499);
+  assert.ok(!by['lidl']);
+  assert.equal(by['gym club'].active, false); // last charge was in July
+  assert.equal(by['gym club'].tracked, true);
+  assert.equal(by['yearly cloud'].period, 'year');
+  assert.equal(by['yearly cloud'].monthlyMinor, Math.round(9900 * 30.4375 / 365));
+  const tot = subscriptionTotals(subs);
+  assert.equal(tot.count, 2);
+  assert.equal(merchantKey('Netflix.com 1234'), 'netflix com');
+});
+
+import { setLang, tr, compile, fill } from '../js/i18n.js';
+test('i18n: exact phrases, patterns, plural endings and English passthrough', () => {
+  assert.equal(tr('Savings'), 'Savings'); // English is the default and passes through
+  setLang('et');
+  assert.equal(tr('Savings'), 'Säästud');
+  assert.equal(tr('€5.00 to pay'), '€5.00 tasuda');
+  assert.equal(fill('{0} tehing{1?ut}', { 0: 3, 1: 's' }), '3 tehingut');
+  assert.equal(fill('{0} tehing{1?ut}', { 0: 1, 1: '' }), '1 tehing');
+  const parts = compile(['<b>', '</b> Cancel ']);
+  assert.ok(parts.join('|').includes('Tühista'));
+  setLang('en');
+});

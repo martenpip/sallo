@@ -15,7 +15,7 @@ export function uid() {
 const nowIso = () => new Date().toISOString();
 
 export const DEFAULT_SETTINGS = () => ({
-  currency: 'EUR', locale: '', weekStart: 1, monthStart: 1, theme: 'system', sound: true, nudges: true, guard: true, wantsLimit: 30, demo: false, pay: null, plan: null, workPay: null, household: null, orientation: 'auto',
+  currency: 'EUR', locale: '', lang: 'en', weekStart: 1, monthStart: 1, theme: 'system', sound: true, nudges: true, guard: true, wantsLimit: 30, demo: false, pay: null, plan: null, workPay: null, household: null, orientation: 'auto',
   onboarded: false, hideAmounts: false, lastExportAt: null, createdAt: nowIso(),
 });
 

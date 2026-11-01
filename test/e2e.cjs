@@ -205,6 +205,16 @@ const sheet = (p) => p.locator('.sheet-wrap.open .sheet').last();
   await p.emulateMedia({ colorScheme: 'dark' }); await p.goto(URL + '#/overview'); await tick(p);
   await p.screenshot({ path: SH + '12-dark.png', fullPage: true });
 
+  console.log('ESTONIAN');
+  await p.evaluate(() => window.__sallo.store.setSettings({ lang: 'et', locale: 'et-EE' })); await tick(p);
+  ok((await p.locator('#tabs').innerText()).includes('Ülevaade') && (await p.locator('#tabs').innerText()).includes('Säästud'), 'tabs are in Estonian');
+  ok(/Kogusaldo/.test(await p.locator('#view').innerText()), 'overview is in Estonian');
+  ok((await p.locator('.bal').innerText()).includes(','), 'amounts use a decimal comma');
+  await p.goto(URL + '#/settings/preferences'); await tick(p);
+  ok(/Keel/.test(await p.locator('#view').innerText()), 'preferences are in Estonian');
+  await p.evaluate(() => window.__sallo.store.setSettings({ lang: 'en', locale: '' })); await tick(p);
+  ok((await p.locator('#tabs').innerText()).includes('Overview'), 'switching back gives English');
+
   console.log('\nconsole errors:', errs.length ? errs : 'none');
   console.log('external requests:', external.length ? external : 'none');
   console.log(failures ? `\n${failures} FAILED` : '\nALL PASSED');

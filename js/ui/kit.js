@@ -2,15 +2,28 @@
 import { app, S } from './ctx.js';
 import { formatMoney, currencyInfo } from '../money.js';
 import { formatDate } from '../dates.js';
+import { getLang, tr, compile } from '../i18n.js';
 
 // ---------- safe html templates (everything interpolated is escaped) ----------
 class Raw { constructor(s) { this.s = s; } toString() { return this.s; } }
 export const raw = (s) => new Raw(String(s));
 export const esc = (v) => String(v).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const str = (v) => (v instanceof Raw ? v.s : Array.isArray(v) ? v.map(str).join('') : v == null || v === false ? '' : esc(v));
+const compiled = new WeakMap();
 export function html(strings, ...vals) {
-  let out = strings[0];
-  vals.forEach((v, i) => { out += str(v) + strings[i + 1]; });
+  if (getLang() === 'en') {
+    let out = strings[0];
+    vals.forEach((v, i) => { out += str(v) + strings[i + 1]; });
+    return new Raw(out);
+  }
+  let c = compiled.get(strings);
+  if (!c || c.lang !== getLang()) { c = { lang: getLang(), parts: compile(strings) }; compiled.set(strings, c); }
+  let out = '';
+  for (const p of c.parts) {
+    if (typeof p === 'string') out += p;
+    else if (p.pl !== undefined) out += str(vals[p.i]) ? p.pl : '';
+    else { const v = vals[p.i]; out += str(typeof v === 'string' ? tr(v) : v); }
+  }
   return new Raw(out);
 }
 export const $ = (sel, root = document) => root.querySelector(sel);
@@ -158,7 +171,7 @@ export function confirmSheet({ title, message, confirmLabel = 'Confirm', danger 
     wrap.querySelector('[data-act=confirm-no]').addEventListener('click', () => { closeSheet(); });
     wrap.querySelector('[data-act=confirm-yes]').addEventListener('click', () => { finish(true); closeSheet(); });
     const t = wrap.querySelector('#confirm-text');
-    t?.addEventListener('input', () => { wrap.querySelector('[data-act=confirm-yes]').disabled = t.value.trim().toUpperCase() !== requireText.toUpperCase(); });
+    t?.addEventListener('input', () => { wrap.querySelector('[data-act=confirm-yes]').disabled = (v => v !== requireText.toUpperCase() && v !== tr(requireText).toUpperCase())(t.value.trim().toUpperCase()); });
   });
 }
 
@@ -168,7 +181,7 @@ export function showError(formEl, name, msg) {
   const input = formEl.elements[name];
   const f = input?.closest?.('.field');
   const err = f?.querySelector('.err');
-  if (err) err.textContent = msg || '';
+  if (err) err.textContent = tr(msg || '');
   if (msg) input?.focus?.();
 }
 export const clearErrors = (formEl) => $$('.err', formEl).forEach((e) => { e.textContent = ''; });

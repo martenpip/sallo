@@ -569,3 +569,14 @@ fieldset { min-width: 0; max-width: 100%; }
 .g-chip .badge.av { width: 34px; height: 34px; } .g-chip > span:last-child { display: flex; flex-direction: column; line-height: 1.2; } .g-chip b { font-size: .88rem; } .g-chip small { color: var(--text2); }
 .g-how summary { cursor: pointer; color: var(--accent-strong); font-weight: 650; font-size: .88rem; list-style: none; padding: 4px 0; } .g-how summary::-webkit-details-marker { display: none; }
 @media (prefers-reduced-motion: reduce) { .g-fill { animation: none; } }
+
+/* subscriptions */
+.sub-hero { background: linear-gradient(155deg, var(--accent-tint), var(--surface) 75%); gap: 4px; }
+.sub-hero .sl-v small { font-size: .9rem; font-weight: 600; color: var(--text2); }
+.sub-main { flex: 1; min-width: 0; display: flex; align-items: center; gap: 12px; padding: 12px 16px; }
+.row-amt .sub-yr { display: block; color: var(--text2); font-weight: 500; }
+.quick.wide { width: 56px; }
+
+.ob-lang { display: flex; gap: 8px; margin-top: 18px; justify-content: center; }
+.ob-lang .pill { min-height: 36px; padding: 4px 14px; border-radius: 99px; border: 1px solid var(--border); background: var(--surface); font-weight: 650; }
+.ob-lang .pill.on { background: var(--accent-strong); color: var(--on-accent); border-color: transparent; }
