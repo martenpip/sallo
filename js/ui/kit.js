@@ -22,7 +22,7 @@ const P = {
   home: 'M3 11l9-8 9 8M5 10v10h14V10', list: 'M4 6h16M4 12h16M4 18h10',
   calendar: 'M4 6h16v14H4zM4 10h16M8 3v4M16 3v4', clock: 'M12 3a9 9 0 100 18 9 9 0 000-18zM12 7v5l3 2',
   piggy: 'M5 11c0-3 3-5 7-5s7 2 7 5c0 2-1 3-2 4v3h-3v-2h-4v2H7v-3c-1-1-2-2-2-4zM16 10h.01',
-  sliders: 'M4 7h10M18 7h2M4 17h2M10 17h10M14 5v4M6 15v4', plus: 'M12 5v14M5 12h14',
+  sliders: 'M4 7h10M18 7h2M4 17h2M10 17h10M14 5v4M6 15v4', plus: 'M12 5v14M5 12h14', minus: 'M5 12h14',
   back: 'M15 5l-7 7 7 7', next: 'M9 5l7 7-7 7', down: 'M6 9l6 6 6-6', check: 'M5 12l5 5 9-10', x: 'M6 6l12 12M18 6L6 18',
   trash: 'M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13', edit: 'M4 20l4-1 11-11-3-3L5 16l-1 4z',
   eye: 'M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12zM12 9.5a2.5 2.5 0 100 5 2.5 2.5 0 000-5z',
@@ -62,6 +62,11 @@ export function amountSpan(minor, type) {
 }
 
 // ---------- shared bits ----------
+const AV = ['#8A7090', '#A4AF69', '#C98B5E', '#5F8FB8', '#C77D96', '#4F8A6A', '#D1A24A', '#7C79C2'];
+export function avatar(key, seed = '') {
+  let h = 0; for (const ch of String(seed)) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  return html`<span class="badge av" style="--c:${AV[h % AV.length]}" aria-hidden="true">${icon(key, 20)}</span>`;
+}
 export const badge = (key, label) => html`<span class="badge" aria-hidden="true">${icon(key, 18)}</span>`;
 export const emptyState = (title, text, action) => html`<div class="empty"><div class="empty-ico">${icon('piggy', 28)}</div><h3>${title}</h3><p>${text}</p>${action || ''}</div>`;
 export const chip = (label, tone = '') => html`<span class="chip ${tone}">${label}</span>`;

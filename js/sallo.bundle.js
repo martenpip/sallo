@@ -1538,7 +1538,7 @@ const P = {
   home: 'M3 11l9-8 9 8M5 10v10h14V10', list: 'M4 6h16M4 12h16M4 18h10',
   calendar: 'M4 6h16v14H4zM4 10h16M8 3v4M16 3v4', clock: 'M12 3a9 9 0 100 18 9 9 0 000-18zM12 7v5l3 2',
   piggy: 'M5 11c0-3 3-5 7-5s7 2 7 5c0 2-1 3-2 4v3h-3v-2h-4v2H7v-3c-1-1-2-2-2-4zM16 10h.01',
-  sliders: 'M4 7h10M18 7h2M4 17h2M10 17h10M14 5v4M6 15v4', plus: 'M12 5v14M5 12h14',
+  sliders: 'M4 7h10M18 7h2M4 17h2M10 17h10M14 5v4M6 15v4', plus: 'M12 5v14M5 12h14', minus: 'M5 12h14',
   back: 'M15 5l-7 7 7 7', next: 'M9 5l7 7-7 7', down: 'M6 9l6 6 6-6', check: 'M5 12l5 5 9-10', x: 'M6 6l12 12M18 6L6 18',
   trash: 'M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13', edit: 'M4 20l4-1 11-11-3-3L5 16l-1 4z',
   eye: 'M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12zM12 9.5a2.5 2.5 0 100 5 2.5 2.5 0 000-5z',
@@ -1578,6 +1578,11 @@ function amountSpan(minor, type) {
 }
 
 // ---------- shared bits ----------
+const AV = ['#8A7090', '#A4AF69', '#C98B5E', '#5F8FB8', '#C77D96', '#4F8A6A', '#D1A24A', '#7C79C2'];
+function avatar(key, seed = '') {
+  let h = 0; for (const ch of String(seed)) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  return html`<span class="badge av" style="--c:${AV[h % AV.length]}" aria-hidden="true">${icon(key, 20)}</span>`;
+}
 const badge = (key, label) => html`<span class="badge" aria-hidden="true">${icon(key, 18)}</span>`;
 const emptyState = (title, text, action) => html`<div class="empty"><div class="empty-ico">${icon('piggy', 28)}</div><h3>${title}</h3><p>${text}</p>${action || ''}</div>`;
 const chip = (label, tone = '') => html`<span class="chip ${tone}">${label}</span>`;
@@ -1701,6 +1706,7 @@ __exports.cur = cur;
 __exports.money = money;
 __exports.dateText = dateText;
 __exports.amountSpan = amountSpan;
+__exports.avatar = avatar;
 __exports.badge = badge;
 __exports.emptyState = emptyState;
 __exports.chip = chip;
@@ -2898,7 +2904,7 @@ __exports.refreshMulti = refreshMulti;
 });
 __def("ui/rows.js", function (__exports) {
 const { app } = __req("ui/ctx.js");
-const { html, icon, amountSpan, money, dateText, chip, badge } = __req("ui/kit.js");
+const { html, icon, amountSpan, money, dateText, chip, avatar } = __req("ui/kit.js");
 const { displayStatus } = __req("calc.js");
 const { today } = __req("dates.js");
 const { KIND_LABEL } = __req("ui/editors.js");
@@ -2911,7 +2917,7 @@ function txnRow(t, { showDate = false } = {}) {
   const sub = t.type === 'transfer' ? `${acc?.name || '?'} → ${to?.name || '?'}` : [cat?.name, acc?.name].filter(Boolean).join(' · ');
   const ico = t.type === 'transfer' ? 'transfer' : cat?.icon || (t.type === 'income' ? 'cash' : 'tag');
   return html`<div class="row"><button class="row-main" data-act="txn-open" data-id="${t.id}">
-    ${badge(ico)}<span class="row-text"><b>${title}</b><small>${showDate ? dateText(t.date) + (sub ? ' · ' : '') : ''}${sub}${t.shared ? html` ${chip('Shared', 'accent')}` : ''}</small></span>
+    ${avatar(ico, t.categoryId || title)}<span class="row-text"><b>${title}</b><small>${showDate ? dateText(t.date) + (sub ? ' · ' : '') : ''}${sub}${t.shared ? html` ${chip('Shared', 'accent')}` : ''}</small></span>
     <span class="row-amt">${amountSpan(t.amountMinor, t.type)}</span></button></div>`;
 }
 
@@ -2929,7 +2935,7 @@ function plannedRow(p, { showDate = true, quick = true } = {}) {
   const ignored = p.kind === 'income' && p.status === 'planned' && p.ruleId && p.ruleId === skipRuleId();
   const canQuick = quick && p.kind !== 'event' && p.status === 'planned';
   return html`<div class="row ${st === 'skipped' ? 'dim' : ''}"><button class="row-main" data-act="planned-open" data-id="${p.id}">
-    ${badge(ico)}<span class="row-text"><b>${p.name}</b>
+    ${avatar(ico, p.categoryId || p.name)}<span class="row-text"><b>${p.name}</b>
       <small>${showDate ? dateText(p.date, { weekday: 'short', day: 'numeric', month: 'short' }) + (p.time ? ' ' + p.time : '') : KIND_LABEL[p.kind]}${p.ruleId ? html` · ${icon('repeat', 12)}` : ''}${doneLabel ? html` ${chip(doneLabel, tone)}` : ''}${ignored ? html` ${chip('Not counted', 'neutral')}` : ''}</small></span>
     <span class="row-amt">${p.kind === 'event' ? '' : amountSpan(p.amountMinor, p.kind)}</span></button>
     ${canQuick ? html`<button class="quick" data-act="mark-paid" data-id="${p.id}" aria-label="${p.kind === 'income' ? 'Mark received' : 'Mark paid'}: ${p.name}">${icon('check', 18)}</button>` : ''}</div>`;
@@ -3048,10 +3054,10 @@ __exports.applyShare = applyShare;
 });
 __def("ui/overview.js", function (__exports) {
 const { app } = __req("ui/ctx.js");
-const { html, raw, icon, money, dateText, pageHeader, progress, chip, actions, badge, emptyState } = __req("ui/kit.js");
+const { html, raw, icon, avatar, money, dateText, pageHeader, progress, chip, actions, badge, emptyState } = __req("ui/kit.js");
 const C = __req("calc.js");
 const { today, periodFor, shiftPeriod, addDays, monthName, dayDiff, formatDate } = __req("dates.js");
-const { plannedRow } = __req("ui/rows.js");
+const { plannedRow, txnRow } = __req("ui/rows.js");
 const { guardFor, guardLines, guardHeadline, skipRuleId } = __req("ui/guard.js");
 const { planCard } = __req("ui/plan.js");
 const { ledger } = __req("household.js");
@@ -3122,29 +3128,62 @@ function overview() {
   const guard = set.guard !== false && isCurrent ? guardFor(p) : null;
   const gLines = guard ? guardLines(guard) : [];
 
+  const recent = d.txns.slice().sort((a, b) => (b.date > a.date ? 1 : b.date < a.date ? -1 : 0)).slice(0, 5);
+  const nextUp = next.find((x) => x.kind !== 'event');
+  const dt = C.debtTotals(d.debts, d.repayments, d.planned);
+  const topGoal = goals[0] ? { g: goals[0], gp: C.goalProgress(goals[0], d.contribs, t) } : null;
+  function carousel() {
+    const sl = [];
+    if (safe) sl.push(html`<div class="slide safe ${safe.safe < 0 ? 'neg' : ''}"><a class="sl-main" href="#/timeline"><span class="sl-k">Safe to spend</span>
+      <b class="sl-v" data-test="safe">${safe.safe < 0 ? '−' + money(-safe.safe) : money(safe.safe)}</b>
+      <span class="sl-s">${safe.safe < 0 ? 'You’re short for what’s coming up.' : html`About ${money(safe.perDay)} a day · ${money(safe.perWeek)} a week`}</span>
+      <span class="sl-f">${safe.work ? 'After bills, work days' : 'After bills'}${safe.allocated ? ' and savings' : ''}${safe.until && !safe.work ? `, until ${dateText(safe.until, { day: 'numeric', month: 'short' })}` : safe.work ? ', next 30 days' : ''}</span></a>
+      ${!safe.byIncome ? html`<a class="sl-link" href="#/settings/pay">Add your pay for a sharper number</a>` : html`<a class="sl-link" href="#/afford">Can I afford something?</a>`}</div>`);
+    if (nextUp) sl.push(html`<a class="slide" href="#/upcoming"><span class="sl-k">Next up</span><b class="sl-v">${nextUp.name}</b><span class="sl-s">${money(nextUp.amountMinor)} · ${dateText(nextUp.date, { weekday: 'short', day: 'numeric', month: 'short' })}</span></a>`);
+    sl.push(html`<a class="slide" href="#/insights"><span class="sl-k">${isCurrent ? 'Spent this period' : periodLabel(p, set.monthStart, set.locale)}</span><b class="sl-v">${money(tot.expense)}</b><span class="sl-s">${money(tot.income)} came in</span></a>`);
+    if (topGoal) sl.push(html`<a class="slide" href="#/goal/${topGoal.g.id}"><span class="sl-k">${topGoal.g.name}</span><b class="sl-v">${topGoal.gp.pct}%</b>${progress(topGoal.gp.pct, 'sage', topGoal.g.name)}<span class="sl-s">${money(topGoal.gp.saved)} of ${money(topGoal.g.targetMinor)}</span></a>`);
+    if (dt.owe || dt.owed) sl.push(html`<a class="slide" href="#/debts"><span class="sl-k">${dt.owe ? 'You owe' : 'Owed to you'}</span><b class="sl-v">${money(dt.owe || dt.owed)}</b><span class="sl-s">${dt.owe && dt.owed ? `${money(dt.owed)} owed to you` : 'Debts and loans'}</span></a>`);
+    if (set.household) { const h = set.household; const l = ledger({ household: h, mine: d.txns.filter((x) => x.shared && x.type === 'expense'), theirs: d.sharedIn, start: p.start, endExclusive: p.endExclusive }); const her = h.config.names[h.partnerId];
+      sl.push(html`<a class="slide" href="#/household"><span class="sl-k">With ${her}</span><b class="sl-v">${money(l.total)}</b><span class="sl-s">${!l.total || !l.balance ? 'You’re even' : l.balance > 0 ? `${her} owes you ${money(l.balance)}` : `You owe ${her} ${money(-l.balance)}`}</span></a>`); }
+    return html`<section class="car-wrap" aria-label="Highlights"><div class="car" tabindex="0">${sl}</div><div class="dots" aria-hidden="true">${sl.map((_, i) => html`<i class="${i ? '' : 'on'}"></i>`)}</div></section>`;
+  }
+
   return {
     html: html`
-    ${pageHeader('Overview', { right: html`<button class="icon-btn" data-act="toggle-hide" aria-label="${set.hideAmounts ? 'Show amounts' : 'Hide amounts'}" aria-pressed="${set.hideAmounts}">${icon(set.hideAmounts ? 'eyeoff' : 'eye')}</button>
-      <a class="icon-btn" href="#/settings" aria-label="Settings">${icon('sliders')}</a>` })}
+    <section class="wallet" aria-label="Total balance">
+      <h1 class="sr">Overview</h1>
+      <div class="wallet-top"><a class="glass-btn" href="#/settings" aria-label="Settings">${icon('sliders', 20)}</a>
+        <a class="wallet-chip" href="#/settings/accounts">${accounts.length} ${accounts.length === 1 ? 'account' : 'accounts'}</a>
+        <button class="glass-btn" data-act="toggle-hide" aria-label="${set.hideAmounts ? 'Show amounts' : 'Hide amounts'}" aria-pressed="${set.hideAmounts}">${icon(set.hideAmounts ? 'eyeoff' : 'eye', 20)}</button></div>
+      <p class="wallet-k">Total balance</p>
+      <b class="bal" data-count="${total}">${money(total)}</b>
+      <p class="wallet-s">${allocated ? html`${money(total - allocated)} free after ${money(allocated)} set aside` : (tot.net >= 0 ? html`${money(tot.net, { sign: true })} so far this period` : html`${money(tot.net, { sign: true })} so far this period`)}</p>
+      <div class="qa" role="group" aria-label="Quick actions">
+        <button class="qa-b" data-act="txn-new" data-type="expense"><span class="qa-c">${icon('minus', 22)}</span>Expense</button>
+        <button class="qa-b" data-act="txn-new" data-type="income"><span class="qa-c">${icon('plus', 22)}</span>Income</button>
+        <button class="qa-b" data-act="txn-new" data-type="transfer"><span class="qa-c">${icon('transfer', 22)}</span>Transfer</button>
+        <a class="qa-b" href="#/afford"><span class="qa-c">${icon('cart', 22)}</span>Can I afford</a>
+      </div>
+    </section>
+    <div class="mini" aria-hidden="true"><b>${money(total)}</b></div>
     ${needBackup ? html`<div class="banner"><div>${icon('download', 18)}</div><div><b>Back up your data</b><p>${lastEx === null ? 'You haven’t exported a backup yet.' : `Your last backup is ${lastEx} days old.`} Your data lives only on this device.</p></div><a class="btn small" href="#/settings/data">Back up</a></div>` : ''}
     ${overdue.count ? html`<a class="banner warn" href="#/upcoming"><div>${icon('clock', 18)}</div><div><b>${overdue.count} overdue</b><p>${overdue.out ? `${money(overdue.out)} to pay` : ''}${overdue.out && overdue.inc ? ' · ' : ''}${overdue.inc ? `${money(overdue.inc)} expected` : ''}</p></div>${icon('next', 18)}</a>` : ''}
 
     ${set.demo ? html`<div class="banner"><div>${icon('info', 18)}</div><div><b>You’re looking at example data</b><p>Nothing here is real. Start fresh when you’re ready.</p></div><button class="btn small" data-act="demo-clear">Start fresh</button></div>` : ''}
-    ${safe ? html`<section class="card hero safe ${safe.safe < 0 ? 'neg' : ''}" aria-label="Safe to spend">
-      <div class="hero-head"><span class="badge pie">${icon('wallet', 22)}</span><div><h2 class="hero-title">Safe to spend</h2><p class="muted small-p">${safe.work ? `After bills and your work days${safe.allocated ? ' and savings' : ''}, over the next 30 days` : html`After bills${safe.allocated ? ' and savings' : ''}${safe.until ? `, until ${safe.byIncome ? 'your next income on ' : ''}${dateText(safe.until, { day: 'numeric', month: 'short' })}` : ''}`}</p></div></div>
-      <div class="hero-amt" data-test="safe">${safe.safe < 0 ? '−' + money(-safe.safe) : money(safe.safe)}</div>
-      ${safe.safe < 0 ? html`<p class="muted">You’re short for what’s coming up. Hold off on non-essentials if you can.</p>`
-        : html`<p class="muted">About <b>${money(safe.perDay)}</b> a day · <b>${money(safe.perWeek)}</b> a week</p>`}
-      <a class="link" href="#/timeline">See your money timeline</a> <span class="muted">·</span> <a class="link" href="#/afford">Can I afford something?</a>
-      ${!safe.byIncome ? html`<a class="btn small" href="#/settings/pay">${icon('cash', 16)} Add your pay and payday for a sharper number</a>` : ''}
-      <p class="muted small-p">${safe.work ? html`Counts your daily pay and every bill in the next 30 days.` : html`${money(safe.balance)} balance${safe.bills ? ` − ${money(safe.bills)} bills due` : ''}`}${safe.allocated ? ` − ${money(safe.allocated)} set aside` : ''}${safe.byIncome ? html` · <a class="link" href="#/settings/pay">Pay settings</a>` : ''}</p></section>` : ''}
-    ${gLines.length ? html`<section class="card guard ${gLines.some((l) => l.level === 'high') ? 'high' : ''}" aria-label="Spending check" role="status">
-      <div class="guard-head"><span class="badge">${icon('info', 20)}</span><h2>${guardHeadline(guard)}</h2></div>
-      ${gLines.map((l) => html`<p>${l.text}</p>`)}
-      ${guard.topWants.length ? html`<p class="muted small-p">Biggest non-essentials this period: ${guard.topWants.map((w, i) => html`${i ? ', ' : ''}${s.category(w.categoryId)?.name} ${money(w.total)}`)}.</p>` : ''}
-      <p class="muted small-p">Essentials are things like rent, utilities, groceries and health. You can change which categories count in Settings → Categories, or turn this off in Preferences.</p></section>` : ''}
+    ${carousel()}
+
+    ${gLines.length ? (() => { const high = gLines.some((l) => l.level === 'high'); const wi = guard.warnings.find((w) => w.code === 'wants-income');
+      return html`<section class="card guard ${high ? 'high' : ''}" aria-label="Spending check" role="status">
+      <div class="g-top"><span class="g-ic">${icon(high ? 'bell' : 'info', 22)}</span><div class="g-txt"><h2>${guardHeadline(guard)}</h2><p>${gLines[0].text}</p></div></div>
+      ${wi ? html`<div class="g-meter" role="img" aria-label="Non-essentials are ${wi.pct} percent of income; comfortable level is ${wi.limit} percent"><div class="g-fill" style="width:${Math.min(100, wi.pct)}%"></div><i class="g-mark" style="left:${Math.min(100, wi.limit)}%"></i></div>
+        <div class="g-scale"><span>${wi.pct}% of income</span><span>comfortable: ${wi.limit}%</span></div>` : ''}
+      ${gLines.slice(1).map((l) => html`<p class="g-more-line">${l.text}</p>`)}
+      ${guard.topWants.length ? html`<div class="g-chips" aria-label="Biggest non-essentials">${guard.topWants.map((w) => { const c = s.category(w.categoryId); return html`<span class="g-chip">${avatar(c?.icon || 'tag', w.categoryId)}<span><b>${c?.name || 'No category'}</b><small>${money(w.total)}</small></span></span>`; })}</div>` : ''}
+      <details class="g-how"><summary>How this works</summary><p class="muted small-p">Essentials are things like rent, utilities, groceries and health. You can change which categories count in Settings → Categories, or turn this off in Preferences.</p></details></section>`; })() : ''}
 
     ${isCurrent ? planCard(p) : ''}
+
+    ${recent.length ? html`<section class="group" aria-label="Recent activity"><div class="card-head sec"><h2>Recent</h2><a class="link" href="#/activity">See all</a></div><div class="card flush list">${recent.map((x) => txnRow(x, { showDate: true }))}</div></section>` : ''}
 
     <section class="card hero" aria-label="Total balance and where it went">
       <div class="hero-head"><span class="badge pie">${icon('pie', 22)}</span><div><h2 class="hero-title">Where your money went</h2><p class="muted small-p">${periodLabel(p, set.monthStart, set.locale)} · share of what you spent</p></div></div>
@@ -3177,16 +3216,6 @@ function overview() {
 
     <section class="card" aria-label="Coming up"><div class="card-head"><h2>Coming up</h2><a class="link" href="#/upcoming">See all</a></div>
       ${next.length ? html`<div class="list">${next.map((x) => plannedRow(x))}</div>` : html`<p class="muted">Nothing planned. Add bills, income or events in Upcoming.</p>`}</section>
-
-    ${(() => { const h = set.household; if (!h) return '';
-      const l = ledger({ household: h, mine: d.txns.filter((x) => x.shared && x.type === 'expense'), theirs: d.sharedIn, start: p.start, endExclusive: p.endExclusive });
-      const her = h.config.names[h.partnerId], bud = h.config.budgetMinor;
-      return html`<section class="card" aria-label="Couples"><div class="card-head"><h2>${icon('heart', 18)} With ${her}</h2><a class="link" href="#/household">Open</a></div>
-        <div class="trio"><div><span class="eyebrow">Spent together</span><b class="amt">${money(l.total)}</b></div><div><span class="eyebrow">${bud ? 'Shared budget' : 'Your share'}</span><b class="amt">${money(bud || l.shareMe)}</b></div></div>
-        ${bud ? progress(Math.min(100, Math.round((l.total * 100) / bud)), l.total > bud ? 'over' : 'sage', 'Shared budget used') : ''}
-        <p class="muted small-p">${!l.total || !l.balance ? 'You’re even for this period.' : l.balance > 0 ? `${her} owes you ${money(l.balance)}.` : `You owe ${her} ${money(-l.balance)}.`}</p></section>`; })()}
-
-    ${(() => { const dt = C.debtTotals(d.debts, d.repayments, d.planned); return dt.owe || dt.owed ? html`<section class="card" aria-label="Debts and loans"><div class="card-head"><h2>${icon('bank', 18)} Debts and loans</h2><a class="link" href="#/debts">See all</a></div><div class="trio"><div><span class="eyebrow">You owe</span><b class="amt ${dt.owe ? 'out' : ''}">${money(dt.owe)}</b></div><div><span class="eyebrow">Owed to you</span><b class="amt ${dt.owed ? 'in' : ''}">${money(dt.owed)}</b></div></div></section>` : ''; })()}
 
     ${goals.length ? html`<section class="card" aria-label="Savings goals"><div class="card-head"><h2>Savings</h2><a class="link" href="#/savings">All</a></div>
       <ul class="plain gap">${goals.map((g) => { const gp = C.goalProgress(g, d.contribs, t); return html`<li><a class="goal-mini" href="#/goal/${g.id}"><div class="bar-label"><span>${g.name}</span><span>${gp.pct}%</span></div>${progress(gp.pct, 'sage', g.name)}<small>${money(gp.saved)} of ${money(g.targetMinor)}</small></a></li>`; })}</ul></section>` : ''}`,
@@ -4979,7 +5008,7 @@ __def("app.js", function (__exports) {
 const { app } = __req("ui/ctx.js");
 const persist = __req("persist.js");
 const { Store, emptyData, COLLS, DEFAULT_SETTINGS } = __req("store.js");
-const { html, $, $$, actions, forms, inputs, changes, toast, closeSheet, closeAllSheets, sheetOpen, clearErrors, pageHeader, emptyState, icon } = __req("ui/kit.js");
+const { html, $, $$, actions, forms, inputs, changes, toast, closeSheet, closeAllSheets, sheetOpen, clearErrors, pageHeader, emptyState, icon, money } = __req("ui/kit.js");
 const { syncSwitch, autoCategorize, refreshMulti } = __req("ui/editors.js");
 __req("ui/dataio.js");
 const { overview } = __req("ui/overview.js");
@@ -5059,6 +5088,10 @@ function doRender() {
     console.error(err);
     view.innerHTML = html`${pageHeader('Something went wrong')}<div class="card"><p>This screen couldn’t be shown. Your data is safe.</p><p class="muted">${String(err.message || err)}</p><a class="btn" href="#/overview">Back to overview</a></div>`.s;
   }
+  const order = ['overview', 'activity', 'calendar', 'upcoming', 'savings'];
+  $('#tabs')?.style.setProperty('--i', String(Math.max(0, order.indexOf(tab))));
+  if (app.route !== hash) { const from = order.indexOf(app.tab), to = order.indexOf(tab); view.style.setProperty('--dx', from < 0 || from === to ? '0px' : (to > from ? '26px' : '-26px')); }
+  app.tab = tab;
   $$('#tabs a').forEach((a) => { if (a.dataset.tab === tab) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
   if (app.route !== hash) {
     view.classList.remove('enter'); void view.offsetWidth; view.classList.add('enter');
@@ -5070,7 +5103,64 @@ function doRender() {
   }
   const banner = $('#storage-banner');
   if (banner) banner.hidden = persist.status.ok;
+  countUp();
+  onScroll();
   if (!onboarding_) { try { checkSettled(); } catch (e) { console.error(e); } } // a paid-off debt gets its celebration
+}
+
+// ---------- motion helpers ----------
+const reduced = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+let lastBal = null, countRaf = 0;
+function countUp() {
+  const el = $('.bal[data-count]');
+  if (!el) { lastBal = null; return; }
+  const to = Number(el.dataset.count), from = lastBal === null ? 0 : lastBal;
+  lastBal = to;
+  if (from === to || reduced() || !/\d/.test(el.textContent)) return;
+  cancelAnimationFrame(countRaf);
+  const t0 = performance.now(), dur = 750;
+  const step = (now) => {
+    if (!app.store || !el.isConnected) return;
+    const k = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - k, 3);
+    el.textContent = money(Math.round(from + (to - from) * e));
+    if (k < 1) countRaf = requestAnimationFrame(step);
+  };
+  countRaf = requestAnimationFrame(step);
+}
+function onScroll() {
+  const sc = Math.max(0, Math.min(1, window.scrollY / 150));
+  document.documentElement.style.setProperty('--sc', sc.toFixed(3));
+}
+window.addEventListener('scroll', onScroll, { passive: true });
+document.addEventListener('scroll', (e) => {
+  const c = e.target;
+  if (!c.classList || !c.classList.contains('car')) return;
+  const first = c.firstElementChild; if (!first) return;
+  const i = Math.round(c.scrollLeft / (first.offsetWidth + 12));
+  c.parentElement.querySelectorAll('.dots i').forEach((d, j) => d.classList.toggle('on', j === i));
+}, true);
+
+// Amount boxes: show thousands separators as you type (10000 becomes 10,000).
+function groupDigits(el, e) {
+  const v = el.value;
+  // A comma followed by one or two digits is a decimal comma (12,50), unless we made it by grouping and the person is just deleting digits.
+  if (/,\d{1,2}$/.test(v) && !(el._grouped && /^delete/.test(e?.inputType || ''))) return;
+  const loc = app.store?.settings.locale || undefined;
+  let commaDecimal = false; try { commaDecimal = (1.1).toLocaleString(loc).includes(','); } catch { /* keep default */ }
+  if (commaDecimal) return; // this language writes 12,50 for twelve and a half: don't treat commas as thousands
+  const caret = el.selectionStart ?? v.length;
+  const digitsBefore = v.slice(0, caret).replace(/[^0-9]/g, '').length;
+  let t = v.replace(/,/g, '').replace(/[^0-9.\-−]/g, '');
+  const neg = /^[-−]/.test(t); t = t.replace(/[-−]/g, '');
+  const dot = t.indexOf('.');
+  let int = dot < 0 ? t : t.slice(0, dot), frac = dot < 0 ? '' : t.slice(dot + 1).replace(/\./g, '');
+  int = int.replace(/^0+(?=\d)/, '').replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  const out = (neg ? '-' : '') + int + (dot < 0 ? '' : '.' + frac);
+  if (out === v) return;
+  el.value = out; el._grouped = true;
+  let n = 0, pos = 0;
+  while (pos < out.length && n < digitsBefore) { if (/\d/.test(out[pos])) n++; pos++; }
+  try { el.setSelectionRange(pos, pos); } catch { /* not supported on this input */ }
 }
 
 // ---------- start / lock ----------
@@ -5133,6 +5223,7 @@ document.addEventListener('submit', async (e) => {
   if (!stayPut) render(); // a rejected form keeps its error messages on screen
 });
 document.addEventListener('input', (e) => {
+  if (e.target.matches?.('.money-in input[inputmode="decimal"]')) groupDigits(e.target, e);
   const el = e.target.closest('[data-input]');
   if (el) inputs[el.dataset.input]?.(el, e);
 });

@@ -1,8 +1,8 @@
 import { app } from './ctx.js';
-import { html, raw, icon, money, dateText, pageHeader, progress, chip, actions, badge, emptyState } from './kit.js';
+import { html, raw, icon, avatar, money, dateText, pageHeader, progress, chip, actions, badge, emptyState } from './kit.js';
 import * as C from '../calc.js';
 import { today, periodFor, shiftPeriod, addDays, monthName, dayDiff, formatDate } from '../dates.js';
-import { plannedRow } from './rows.js';
+import { plannedRow, txnRow } from './rows.js';
 import { guardFor, guardLines, guardHeadline, skipRuleId } from './guard.js';
 import { planCard } from './plan.js';
 import { ledger } from '../household.js';
@@ -73,29 +73,62 @@ export function overview() {
   const guard = set.guard !== false && isCurrent ? guardFor(p) : null;
   const gLines = guard ? guardLines(guard) : [];
 
+  const recent = d.txns.slice().sort((a, b) => (b.date > a.date ? 1 : b.date < a.date ? -1 : 0)).slice(0, 5);
+  const nextUp = next.find((x) => x.kind !== 'event');
+  const dt = C.debtTotals(d.debts, d.repayments, d.planned);
+  const topGoal = goals[0] ? { g: goals[0], gp: C.goalProgress(goals[0], d.contribs, t) } : null;
+  function carousel() {
+    const sl = [];
+    if (safe) sl.push(html`<div class="slide safe ${safe.safe < 0 ? 'neg' : ''}"><a class="sl-main" href="#/timeline"><span class="sl-k">Safe to spend</span>
+      <b class="sl-v" data-test="safe">${safe.safe < 0 ? '−' + money(-safe.safe) : money(safe.safe)}</b>
+      <span class="sl-s">${safe.safe < 0 ? 'You’re short for what’s coming up.' : html`About ${money(safe.perDay)} a day · ${money(safe.perWeek)} a week`}</span>
+      <span class="sl-f">${safe.work ? 'After bills, work days' : 'After bills'}${safe.allocated ? ' and savings' : ''}${safe.until && !safe.work ? `, until ${dateText(safe.until, { day: 'numeric', month: 'short' })}` : safe.work ? ', next 30 days' : ''}</span></a>
+      ${!safe.byIncome ? html`<a class="sl-link" href="#/settings/pay">Add your pay for a sharper number</a>` : html`<a class="sl-link" href="#/afford">Can I afford something?</a>`}</div>`);
+    if (nextUp) sl.push(html`<a class="slide" href="#/upcoming"><span class="sl-k">Next up</span><b class="sl-v">${nextUp.name}</b><span class="sl-s">${money(nextUp.amountMinor)} · ${dateText(nextUp.date, { weekday: 'short', day: 'numeric', month: 'short' })}</span></a>`);
+    sl.push(html`<a class="slide" href="#/insights"><span class="sl-k">${isCurrent ? 'Spent this period' : periodLabel(p, set.monthStart, set.locale)}</span><b class="sl-v">${money(tot.expense)}</b><span class="sl-s">${money(tot.income)} came in</span></a>`);
+    if (topGoal) sl.push(html`<a class="slide" href="#/goal/${topGoal.g.id}"><span class="sl-k">${topGoal.g.name}</span><b class="sl-v">${topGoal.gp.pct}%</b>${progress(topGoal.gp.pct, 'sage', topGoal.g.name)}<span class="sl-s">${money(topGoal.gp.saved)} of ${money(topGoal.g.targetMinor)}</span></a>`);
+    if (dt.owe || dt.owed) sl.push(html`<a class="slide" href="#/debts"><span class="sl-k">${dt.owe ? 'You owe' : 'Owed to you'}</span><b class="sl-v">${money(dt.owe || dt.owed)}</b><span class="sl-s">${dt.owe && dt.owed ? `${money(dt.owed)} owed to you` : 'Debts and loans'}</span></a>`);
+    if (set.household) { const h = set.household; const l = ledger({ household: h, mine: d.txns.filter((x) => x.shared && x.type === 'expense'), theirs: d.sharedIn, start: p.start, endExclusive: p.endExclusive }); const her = h.config.names[h.partnerId];
+      sl.push(html`<a class="slide" href="#/household"><span class="sl-k">With ${her}</span><b class="sl-v">${money(l.total)}</b><span class="sl-s">${!l.total || !l.balance ? 'You’re even' : l.balance > 0 ? `${her} owes you ${money(l.balance)}` : `You owe ${her} ${money(-l.balance)}`}</span></a>`); }
+    return html`<section class="car-wrap" aria-label="Highlights"><div class="car" tabindex="0">${sl}</div><div class="dots" aria-hidden="true">${sl.map((_, i) => html`<i class="${i ? '' : 'on'}"></i>`)}</div></section>`;
+  }
+
   return {
     html: html`
-    ${pageHeader('Overview', { right: html`<button class="icon-btn" data-act="toggle-hide" aria-label="${set.hideAmounts ? 'Show amounts' : 'Hide amounts'}" aria-pressed="${set.hideAmounts}">${icon(set.hideAmounts ? 'eyeoff' : 'eye')}</button>
-      <a class="icon-btn" href="#/settings" aria-label="Settings">${icon('sliders')}</a>` })}
+    <section class="wallet" aria-label="Total balance">
+      <h1 class="sr">Overview</h1>
+      <div class="wallet-top"><a class="glass-btn" href="#/settings" aria-label="Settings">${icon('sliders', 20)}</a>
+        <a class="wallet-chip" href="#/settings/accounts">${accounts.length} ${accounts.length === 1 ? 'account' : 'accounts'}</a>
+        <button class="glass-btn" data-act="toggle-hide" aria-label="${set.hideAmounts ? 'Show amounts' : 'Hide amounts'}" aria-pressed="${set.hideAmounts}">${icon(set.hideAmounts ? 'eyeoff' : 'eye', 20)}</button></div>
+      <p class="wallet-k">Total balance</p>
+      <b class="bal" data-count="${total}">${money(total)}</b>
+      <p class="wallet-s">${allocated ? html`${money(total - allocated)} free after ${money(allocated)} set aside` : (tot.net >= 0 ? html`${money(tot.net, { sign: true })} so far this period` : html`${money(tot.net, { sign: true })} so far this period`)}</p>
+      <div class="qa" role="group" aria-label="Quick actions">
+        <button class="qa-b" data-act="txn-new" data-type="expense"><span class="qa-c">${icon('minus', 22)}</span>Expense</button>
+        <button class="qa-b" data-act="txn-new" data-type="income"><span class="qa-c">${icon('plus', 22)}</span>Income</button>
+        <button class="qa-b" data-act="txn-new" data-type="transfer"><span class="qa-c">${icon('transfer', 22)}</span>Transfer</button>
+        <a class="qa-b" href="#/afford"><span class="qa-c">${icon('cart', 22)}</span>Can I afford</a>
+      </div>
+    </section>
+    <div class="mini" aria-hidden="true"><b>${money(total)}</b></div>
     ${needBackup ? html`<div class="banner"><div>${icon('download', 18)}</div><div><b>Back up your data</b><p>${lastEx === null ? 'You haven’t exported a backup yet.' : `Your last backup is ${lastEx} days old.`} Your data lives only on this device.</p></div><a class="btn small" href="#/settings/data">Back up</a></div>` : ''}
     ${overdue.count ? html`<a class="banner warn" href="#/upcoming"><div>${icon('clock', 18)}</div><div><b>${overdue.count} overdue</b><p>${overdue.out ? `${money(overdue.out)} to pay` : ''}${overdue.out && overdue.inc ? ' · ' : ''}${overdue.inc ? `${money(overdue.inc)} expected` : ''}</p></div>${icon('next', 18)}</a>` : ''}
 
     ${set.demo ? html`<div class="banner"><div>${icon('info', 18)}</div><div><b>You’re looking at example data</b><p>Nothing here is real. Start fresh when you’re ready.</p></div><button class="btn small" data-act="demo-clear">Start fresh</button></div>` : ''}
-    ${safe ? html`<section class="card hero safe ${safe.safe < 0 ? 'neg' : ''}" aria-label="Safe to spend">
-      <div class="hero-head"><span class="badge pie">${icon('wallet', 22)}</span><div><h2 class="hero-title">Safe to spend</h2><p class="muted small-p">${safe.work ? `After bills and your work days${safe.allocated ? ' and savings' : ''}, over the next 30 days` : html`After bills${safe.allocated ? ' and savings' : ''}${safe.until ? `, until ${safe.byIncome ? 'your next income on ' : ''}${dateText(safe.until, { day: 'numeric', month: 'short' })}` : ''}`}</p></div></div>
-      <div class="hero-amt" data-test="safe">${safe.safe < 0 ? '−' + money(-safe.safe) : money(safe.safe)}</div>
-      ${safe.safe < 0 ? html`<p class="muted">You’re short for what’s coming up. Hold off on non-essentials if you can.</p>`
-        : html`<p class="muted">About <b>${money(safe.perDay)}</b> a day · <b>${money(safe.perWeek)}</b> a week</p>`}
-      <a class="link" href="#/timeline">See your money timeline</a> <span class="muted">·</span> <a class="link" href="#/afford">Can I afford something?</a>
-      ${!safe.byIncome ? html`<a class="btn small" href="#/settings/pay">${icon('cash', 16)} Add your pay and payday for a sharper number</a>` : ''}
-      <p class="muted small-p">${safe.work ? html`Counts your daily pay and every bill in the next 30 days.` : html`${money(safe.balance)} balance${safe.bills ? ` − ${money(safe.bills)} bills due` : ''}`}${safe.allocated ? ` − ${money(safe.allocated)} set aside` : ''}${safe.byIncome ? html` · <a class="link" href="#/settings/pay">Pay settings</a>` : ''}</p></section>` : ''}
-    ${gLines.length ? html`<section class="card guard ${gLines.some((l) => l.level === 'high') ? 'high' : ''}" aria-label="Spending check" role="status">
-      <div class="guard-head"><span class="badge">${icon('info', 20)}</span><h2>${guardHeadline(guard)}</h2></div>
-      ${gLines.map((l) => html`<p>${l.text}</p>`)}
-      ${guard.topWants.length ? html`<p class="muted small-p">Biggest non-essentials this period: ${guard.topWants.map((w, i) => html`${i ? ', ' : ''}${s.category(w.categoryId)?.name} ${money(w.total)}`)}.</p>` : ''}
-      <p class="muted small-p">Essentials are things like rent, utilities, groceries and health. You can change which categories count in Settings → Categories, or turn this off in Preferences.</p></section>` : ''}
+    ${carousel()}
+
+    ${gLines.length ? (() => { const high = gLines.some((l) => l.level === 'high'); const wi = guard.warnings.find((w) => w.code === 'wants-income');
+      return html`<section class="card guard ${high ? 'high' : ''}" aria-label="Spending check" role="status">
+      <div class="g-top"><span class="g-ic">${icon(high ? 'bell' : 'info', 22)}</span><div class="g-txt"><h2>${guardHeadline(guard)}</h2><p>${gLines[0].text}</p></div></div>
+      ${wi ? html`<div class="g-meter" role="img" aria-label="Non-essentials are ${wi.pct} percent of income; comfortable level is ${wi.limit} percent"><div class="g-fill" style="width:${Math.min(100, wi.pct)}%"></div><i class="g-mark" style="left:${Math.min(100, wi.limit)}%"></i></div>
+        <div class="g-scale"><span>${wi.pct}% of income</span><span>comfortable: ${wi.limit}%</span></div>` : ''}
+      ${gLines.slice(1).map((l) => html`<p class="g-more-line">${l.text}</p>`)}
+      ${guard.topWants.length ? html`<div class="g-chips" aria-label="Biggest non-essentials">${guard.topWants.map((w) => { const c = s.category(w.categoryId); return html`<span class="g-chip">${avatar(c?.icon || 'tag', w.categoryId)}<span><b>${c?.name || 'No category'}</b><small>${money(w.total)}</small></span></span>`; })}</div>` : ''}
+      <details class="g-how"><summary>How this works</summary><p class="muted small-p">Essentials are things like rent, utilities, groceries and health. You can change which categories count in Settings → Categories, or turn this off in Preferences.</p></details></section>`; })() : ''}
 
     ${isCurrent ? planCard(p) : ''}
+
+    ${recent.length ? html`<section class="group" aria-label="Recent activity"><div class="card-head sec"><h2>Recent</h2><a class="link" href="#/activity">See all</a></div><div class="card flush list">${recent.map((x) => txnRow(x, { showDate: true }))}</div></section>` : ''}
 
     <section class="card hero" aria-label="Total balance and where it went">
       <div class="hero-head"><span class="badge pie">${icon('pie', 22)}</span><div><h2 class="hero-title">Where your money went</h2><p class="muted small-p">${periodLabel(p, set.monthStart, set.locale)} · share of what you spent</p></div></div>
@@ -128,16 +161,6 @@ export function overview() {
 
     <section class="card" aria-label="Coming up"><div class="card-head"><h2>Coming up</h2><a class="link" href="#/upcoming">See all</a></div>
       ${next.length ? html`<div class="list">${next.map((x) => plannedRow(x))}</div>` : html`<p class="muted">Nothing planned. Add bills, income or events in Upcoming.</p>`}</section>
-
-    ${(() => { const h = set.household; if (!h) return '';
-      const l = ledger({ household: h, mine: d.txns.filter((x) => x.shared && x.type === 'expense'), theirs: d.sharedIn, start: p.start, endExclusive: p.endExclusive });
-      const her = h.config.names[h.partnerId], bud = h.config.budgetMinor;
-      return html`<section class="card" aria-label="Couples"><div class="card-head"><h2>${icon('heart', 18)} With ${her}</h2><a class="link" href="#/household">Open</a></div>
-        <div class="trio"><div><span class="eyebrow">Spent together</span><b class="amt">${money(l.total)}</b></div><div><span class="eyebrow">${bud ? 'Shared budget' : 'Your share'}</span><b class="amt">${money(bud || l.shareMe)}</b></div></div>
-        ${bud ? progress(Math.min(100, Math.round((l.total * 100) / bud)), l.total > bud ? 'over' : 'sage', 'Shared budget used') : ''}
-        <p class="muted small-p">${!l.total || !l.balance ? 'You’re even for this period.' : l.balance > 0 ? `${her} owes you ${money(l.balance)}.` : `You owe ${her} ${money(-l.balance)}.`}</p></section>`; })()}
-
-    ${(() => { const dt = C.debtTotals(d.debts, d.repayments, d.planned); return dt.owe || dt.owed ? html`<section class="card" aria-label="Debts and loans"><div class="card-head"><h2>${icon('bank', 18)} Debts and loans</h2><a class="link" href="#/debts">See all</a></div><div class="trio"><div><span class="eyebrow">You owe</span><b class="amt ${dt.owe ? 'out' : ''}">${money(dt.owe)}</b></div><div><span class="eyebrow">Owed to you</span><b class="amt ${dt.owed ? 'in' : ''}">${money(dt.owed)}</b></div></div></section>` : ''; })()}
 
     ${goals.length ? html`<section class="card" aria-label="Savings goals"><div class="card-head"><h2>Savings</h2><a class="link" href="#/savings">All</a></div>
       <ul class="plain gap">${goals.map((g) => { const gp = C.goalProgress(g, d.contribs, t); return html`<li><a class="goal-mini" href="#/goal/${g.id}"><div class="bar-label"><span>${g.name}</span><span>${gp.pct}%</span></div>${progress(gp.pct, 'sage', g.name)}<small>${money(gp.saved)} of ${money(g.targetMinor)}</small></a></li>`; })}</ul></section>` : ''}`,

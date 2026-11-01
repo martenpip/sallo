@@ -2,7 +2,7 @@
 import { app } from './ui/ctx.js';
 import * as persist from './persist.js';
 import { Store, emptyData, COLLS, DEFAULT_SETTINGS } from './store.js';
-import { html, $, $$, actions, forms, inputs, changes, toast, closeSheet, closeAllSheets, sheetOpen, clearErrors, pageHeader, emptyState, icon } from './ui/kit.js';
+import { html, $, $$, actions, forms, inputs, changes, toast, closeSheet, closeAllSheets, sheetOpen, clearErrors, pageHeader, emptyState, icon, money } from './ui/kit.js';
 import { syncSwitch, autoCategorize, refreshMulti } from './ui/editors.js';
 import './ui/dataio.js';
 import { overview } from './ui/overview.js';
@@ -82,6 +82,10 @@ function doRender() {
     console.error(err);
     view.innerHTML = html`${pageHeader('Something went wrong')}<div class="card"><p>This screen couldn’t be shown. Your data is safe.</p><p class="muted">${String(err.message || err)}</p><a class="btn" href="#/overview">Back to overview</a></div>`.s;
   }
+  const order = ['overview', 'activity', 'calendar', 'upcoming', 'savings'];
+  $('#tabs')?.style.setProperty('--i', String(Math.max(0, order.indexOf(tab))));
+  if (app.route !== hash) { const from = order.indexOf(app.tab), to = order.indexOf(tab); view.style.setProperty('--dx', from < 0 || from === to ? '0px' : (to > from ? '26px' : '-26px')); }
+  app.tab = tab;
   $$('#tabs a').forEach((a) => { if (a.dataset.tab === tab) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
   if (app.route !== hash) {
     view.classList.remove('enter'); void view.offsetWidth; view.classList.add('enter');
@@ -93,7 +97,64 @@ function doRender() {
   }
   const banner = $('#storage-banner');
   if (banner) banner.hidden = persist.status.ok;
+  countUp();
+  onScroll();
   if (!onboarding_) { try { checkSettled(); } catch (e) { console.error(e); } } // a paid-off debt gets its celebration
+}
+
+// ---------- motion helpers ----------
+const reduced = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+let lastBal = null, countRaf = 0;
+function countUp() {
+  const el = $('.bal[data-count]');
+  if (!el) { lastBal = null; return; }
+  const to = Number(el.dataset.count), from = lastBal === null ? 0 : lastBal;
+  lastBal = to;
+  if (from === to || reduced() || !/\d/.test(el.textContent)) return;
+  cancelAnimationFrame(countRaf);
+  const t0 = performance.now(), dur = 750;
+  const step = (now) => {
+    if (!app.store || !el.isConnected) return;
+    const k = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - k, 3);
+    el.textContent = money(Math.round(from + (to - from) * e));
+    if (k < 1) countRaf = requestAnimationFrame(step);
+  };
+  countRaf = requestAnimationFrame(step);
+}
+function onScroll() {
+  const sc = Math.max(0, Math.min(1, window.scrollY / 150));
+  document.documentElement.style.setProperty('--sc', sc.toFixed(3));
+}
+window.addEventListener('scroll', onScroll, { passive: true });
+document.addEventListener('scroll', (e) => {
+  const c = e.target;
+  if (!c.classList || !c.classList.contains('car')) return;
+  const first = c.firstElementChild; if (!first) return;
+  const i = Math.round(c.scrollLeft / (first.offsetWidth + 12));
+  c.parentElement.querySelectorAll('.dots i').forEach((d, j) => d.classList.toggle('on', j === i));
+}, true);
+
+// Amount boxes: show thousands separators as you type (10000 becomes 10,000).
+function groupDigits(el, e) {
+  const v = el.value;
+  // A comma followed by one or two digits is a decimal comma (12,50), unless we made it by grouping and the person is just deleting digits.
+  if (/,\d{1,2}$/.test(v) && !(el._grouped && /^delete/.test(e?.inputType || ''))) return;
+  const loc = app.store?.settings.locale || undefined;
+  let commaDecimal = false; try { commaDecimal = (1.1).toLocaleString(loc).includes(','); } catch { /* keep default */ }
+  if (commaDecimal) return; // this language writes 12,50 for twelve and a half: don't treat commas as thousands
+  const caret = el.selectionStart ?? v.length;
+  const digitsBefore = v.slice(0, caret).replace(/[^0-9]/g, '').length;
+  let t = v.replace(/,/g, '').replace(/[^0-9.\-−]/g, '');
+  const neg = /^[-−]/.test(t); t = t.replace(/[-−]/g, '');
+  const dot = t.indexOf('.');
+  let int = dot < 0 ? t : t.slice(0, dot), frac = dot < 0 ? '' : t.slice(dot + 1).replace(/\./g, '');
+  int = int.replace(/^0+(?=\d)/, '').replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  const out = (neg ? '-' : '') + int + (dot < 0 ? '' : '.' + frac);
+  if (out === v) return;
+  el.value = out; el._grouped = true;
+  let n = 0, pos = 0;
+  while (pos < out.length && n < digitsBefore) { if (/\d/.test(out[pos])) n++; pos++; }
+  try { el.setSelectionRange(pos, pos); } catch { /* not supported on this input */ }
 }
 
 // ---------- start / lock ----------
@@ -156,6 +217,7 @@ document.addEventListener('submit', async (e) => {
   if (!stayPut) render(); // a rejected form keeps its error messages on screen
 });
 document.addEventListener('input', (e) => {
+  if (e.target.matches?.('.money-in input[inputmode="decimal"]')) groupDigits(e.target, e);
   const el = e.target.closest('[data-input]');
   if (el) inputs[el.dataset.input]?.(el, e);
 });

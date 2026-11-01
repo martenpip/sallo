@@ -1,6 +1,6 @@
 // Offline support: caches the app's own files so it opens without a connection.
 // It never caches or sends your data, and never contacts any other site.
-const VERSION = 'sallo-v1.20.1';
+const VERSION = 'sallo-v1.21.1';
 const FILES = [
   './', 'index.html', 'manifest.webmanifest', 'css/app.css',
   'js/sallo.bundle.js',

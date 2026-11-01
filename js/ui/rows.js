@@ -1,5 +1,5 @@
 import { app } from './ctx.js';
-import { html, icon, amountSpan, money, dateText, chip, badge } from './kit.js';
+import { html, icon, amountSpan, money, dateText, chip, avatar } from './kit.js';
 import { displayStatus } from '../calc.js';
 import { today } from '../dates.js';
 import { KIND_LABEL } from './editors.js';
@@ -12,7 +12,7 @@ export function txnRow(t, { showDate = false } = {}) {
   const sub = t.type === 'transfer' ? `${acc?.name || '?'} → ${to?.name || '?'}` : [cat?.name, acc?.name].filter(Boolean).join(' · ');
   const ico = t.type === 'transfer' ? 'transfer' : cat?.icon || (t.type === 'income' ? 'cash' : 'tag');
   return html`<div class="row"><button class="row-main" data-act="txn-open" data-id="${t.id}">
-    ${badge(ico)}<span class="row-text"><b>${title}</b><small>${showDate ? dateText(t.date) + (sub ? ' · ' : '') : ''}${sub}${t.shared ? html` ${chip('Shared', 'accent')}` : ''}</small></span>
+    ${avatar(ico, t.categoryId || title)}<span class="row-text"><b>${title}</b><small>${showDate ? dateText(t.date) + (sub ? ' · ' : '') : ''}${sub}${t.shared ? html` ${chip('Shared', 'accent')}` : ''}</small></span>
     <span class="row-amt">${amountSpan(t.amountMinor, t.type)}</span></button></div>`;
 }
 
@@ -30,7 +30,7 @@ export function plannedRow(p, { showDate = true, quick = true } = {}) {
   const ignored = p.kind === 'income' && p.status === 'planned' && p.ruleId && p.ruleId === skipRuleId();
   const canQuick = quick && p.kind !== 'event' && p.status === 'planned';
   return html`<div class="row ${st === 'skipped' ? 'dim' : ''}"><button class="row-main" data-act="planned-open" data-id="${p.id}">
-    ${badge(ico)}<span class="row-text"><b>${p.name}</b>
+    ${avatar(ico, p.categoryId || p.name)}<span class="row-text"><b>${p.name}</b>
       <small>${showDate ? dateText(p.date, { weekday: 'short', day: 'numeric', month: 'short' }) + (p.time ? ' ' + p.time : '') : KIND_LABEL[p.kind]}${p.ruleId ? html` · ${icon('repeat', 12)}` : ''}${doneLabel ? html` ${chip(doneLabel, tone)}` : ''}${ignored ? html` ${chip('Not counted', 'neutral')}` : ''}</small></span>
     <span class="row-amt">${p.kind === 'event' ? '' : amountSpan(p.amountMinor, p.kind)}</span></button>
     ${canQuick ? html`<button class="quick" data-act="mark-paid" data-id="${p.id}" aria-label="${p.kind === 'income' ? 'Mark received' : 'Mark paid'}: ${p.name}">${icon('check', 18)}</button>` : ''}</div>`;
