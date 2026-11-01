@@ -87,8 +87,8 @@ function editor(h) {
   const mode = c?.split.mode || 'half';
   const myInc = c?.incomes[h.personId] || monthlyPay() || null, herInc = c?.incomes[h?.partnerId] || null;
   return html`<form data-form="household" novalidate>
-    ${textField('me', 'Your name', me === 'Me' ? '' : me, { required: true, ph: 'Marten', max: 30 })}
-    ${textField('her', 'Your partner’s name', her === 'Partner' ? '' : her, { required: true, ph: 'Anna', max: 30 })}
+    ${textField('me', 'Your name', me === 'Me' ? '' : me, { required: true, ph: 'Joe', max: 30 })}
+    ${textField('her', 'Your partner’s name', her === 'Partner' ? '' : her, { required: true, ph: 'Darla', max: 30 })}
     <fieldset class="seg-field"><legend>How do you split shared costs?</legend>${segmented('mode', [['half', 'Half each'], ['income', 'By income'], ['custom', 'My own split']], mode)}</fieldset>
     ${amountField('myInc', myInc, 'Your monthly income', { hint: 'Used when splitting by income. Your partner sees it in the file.' })}
     ${amountField('herInc', herInc, 'Your partner’s monthly income', { hint: 'Ask them. Only used when splitting by income.' })}

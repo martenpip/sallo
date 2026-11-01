@@ -4573,7 +4573,7 @@ function openDebtEditor(id) {
   const nextDate = rule ? (planned().find((p) => p.ruleId === rule.id && p.status === 'planned')?.date || rule.startDate) : addMonthsClamped(today(), 1, +today().slice(8));
   openSheet(x ? 'Edit debt or loan' : 'Add a debt or loan', html`
     <form data-form="debt" novalidate><input type="hidden" name="id" value="${x?.id || ''}">
-      ${textField('name', 'Name', x?.name || '', { required: true, ph: 'Car loan, credit card, lent to Anna…', max: 60 })}
+      ${textField('name', 'Name', x?.name || '', { required: true, ph: 'Car loan, credit card, lent to a friend…', max: 60 })}
       <fieldset class="seg-field"><legend>Who owes who?</legend>${segmented('direction', [['owe', 'I owe'], ['owed', 'Owed to me']], x?.direction || 'owe')}</fieldset>
       ${amountField('amount', x?.startMinor, 'Amount', { hint: 'What is owed in total. If you’ve already paid part of it, enter what’s left today.' })}
       ${field('Yearly interest (optional)', html`<div class="money-in"><input id="f-apr" name="apr" inputmode="decimal" autocomplete="off" placeholder="0" value="${x?.aprBp ? (x.aprBp / 100).toString() : ''}"><b>%</b></div>`, 'Leave empty if there is none.', 'f-apr')}
@@ -4777,8 +4777,8 @@ function editor(h) {
   const mode = c?.split.mode || 'half';
   const myInc = c?.incomes[h.personId] || monthlyPay() || null, herInc = c?.incomes[h?.partnerId] || null;
   return html`<form data-form="household" novalidate>
-    ${textField('me', 'Your name', me === 'Me' ? '' : me, { required: true, ph: 'Marten', max: 30 })}
-    ${textField('her', 'Your partner’s name', her === 'Partner' ? '' : her, { required: true, ph: 'Anna', max: 30 })}
+    ${textField('me', 'Your name', me === 'Me' ? '' : me, { required: true, ph: 'Joe', max: 30 })}
+    ${textField('her', 'Your partner’s name', her === 'Partner' ? '' : her, { required: true, ph: 'Darla', max: 30 })}
     <fieldset class="seg-field"><legend>How do you split shared costs?</legend>${segmented('mode', [['half', 'Half each'], ['income', 'By income'], ['custom', 'My own split']], mode)}</fieldset>
     ${amountField('myInc', myInc, 'Your monthly income', { hint: 'Used when splitting by income. Your partner sees it in the file.' })}
     ${amountField('herInc', herInc, 'Your partner’s monthly income', { hint: 'Ask them. Only used when splitting by income.' })}
