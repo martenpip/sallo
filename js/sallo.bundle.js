@@ -1300,7 +1300,7 @@ const CLEAN = {
   },
   goals: (r) => (idOf(r.id) && str(r.name) && int(r.targetMinor) > 0 ? { id: r.id, name: str(r.name), targetMinor: r.targetMinor, deadline: isoOr(r.deadline), autoPct: Number.isInteger(r.autoPct) && r.autoPct >= 0 && r.autoPct <= 50 ? r.autoPct : 0, icon: str(r.icon, 20) || 'piggy', archived: bool(r.archived), note: str(r.note, 1000), updatedAt: stamp(r.updatedAt) } : null),
   contribs: (r) => (idOf(r.id) && idOf(r.goalId) && int(r.amountMinor) !== null && isoOr(r.date) ? { id: r.id, goalId: r.goalId, amountMinor: r.amountMinor, date: r.date, note: str(r.note, 500), updatedAt: stamp(r.updatedAt) } : null),
-  debts: (r) => (idOf(r.id) && str(r.name) && int(r.startMinor) > 0 ? { id: r.id, name: str(r.name), direction: oneOf(r.direction, ['owe', 'owed'], 'owe'), startMinor: r.startMinor, aprBp: Number.isInteger(r.aprBp) && r.aprBp >= 0 && r.aprBp <= 10000 ? r.aprBp : 0, monthlyMinor: Math.max(0, int(r.monthlyMinor) ?? 0), ruleId: idOf(r.ruleId), accountId: idOf(r.accountId), startDate: isoOr(r.startDate), note: str(r.note, 1000), archived: bool(r.archived), updatedAt: stamp(r.updatedAt) } : null),
+  debts: (r) => (idOf(r.id) && str(r.name) && int(r.startMinor) > 0 ? { id: r.id, name: str(r.name), direction: oneOf(r.direction, ['owe', 'owed'], 'owe'), startMinor: r.startMinor, aprBp: Number.isInteger(r.aprBp) && r.aprBp >= 0 && r.aprBp <= 10000 ? r.aprBp : 0, monthlyMinor: Math.max(0, int(r.monthlyMinor) ?? 0), ruleId: idOf(r.ruleId), accountId: idOf(r.accountId), startDate: isoOr(r.startDate), settledAt: isoOr(r.settledAt), note: str(r.note, 1000), archived: bool(r.archived), updatedAt: stamp(r.updatedAt) } : null),
   repayments: (r) => (idOf(r.id) && idOf(r.debtId) && int(r.amountMinor) && isoOr(r.date) ? { id: r.id, debtId: r.debtId, amountMinor: r.amountMinor, date: r.date, txnId: idOf(r.txnId), note: str(r.note, 500), updatedAt: stamp(r.updatedAt) } : null),
   budgets: (r) => (idOf(r.id) && int(r.limitMinor) > 0 ? { id: r.id, categoryId: typeof r.categoryId === 'string' ? r.categoryId : '', limitMinor: r.limitMinor, updatedAt: stamp(r.updatedAt) } : null),
 };
@@ -4197,14 +4197,65 @@ actions['bank-go'] = () => {
 
 __exports.bankImport = bankImport;
 });
+__def("sound.js", function (__exports) {
+// Soft, calming interface sounds made on the fly with the Web Audio API.
+// No audio files, nothing downloaded. Quiet by design; can be turned off in Preferences.
+let ctx = null, master = null, enabled = true, last = 0;
+
+function setSoundEnabled(on) { enabled = !!on; }
+
+function ensure() {
+  if (!enabled) return null;
+  const AC = window.AudioContext || window.webkitAudioContext;
+  if (!AC) return null;
+  if (!ctx) { try { ctx = new AC(); master = ctx.createGain(); master.gain.value = 0.55; master.connect(ctx.destination); } catch { return null; } }
+  if (ctx.state === 'suspended') ctx.resume().catch(() => {});
+  return ctx;
+}
+
+// one soft sine "bell" note with a gentle attack and long, smooth fade
+function note(freq, at, dur, vol) {
+  const o = ctx.createOscillator(), o2 = ctx.createOscillator(), g = ctx.createGain();
+  o.type = 'sine'; o.frequency.value = freq;
+  o2.type = 'sine'; o2.frequency.value = freq * 2; // faint octave for warmth
+  const g2 = ctx.createGain(); g2.gain.value = 0.18;
+  const t = ctx.currentTime + at;
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(vol, t + 0.015);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  o.connect(g); o2.connect(g2); g2.connect(g); g.connect(master);
+  o.start(t); o2.start(t); o.stop(t + dur + 0.05); o2.stop(t + dur + 0.05);
+}
+
+const SOUNDS = {
+  tap:     () => note(523.25, 0, 0.16, 0.05),                                   // C5, barely there
+  tab:     () => note(659.25, 0, 0.2, 0.06),                                    // E5
+  open:    () => { note(440, 0, 0.3, 0.05); note(659.25, 0.06, 0.3, 0.04); },  // rising
+  close:   () => { note(659.25, 0, 0.25, 0.04); note(440, 0.06, 0.28, 0.04); },// falling
+  success: () => { note(523.25, 0, 0.7, 0.07); note(659.25, 0.11, 0.7, 0.06); note(783.99, 0.22, 1.0, 0.06); }, // C-E-G chime
+  soft:    () => note(392, 0, 0.35, 0.05),
+};
+
+function play(name) {
+  const now = performance.now();
+  if (now - last < 45) return; // never machine-gun
+  const fn = SOUNDS[name];
+  if (!fn || !ensure()) return;
+  last = now;
+  try { fn(); } catch { /* sound is optional */ }
+}
+
+__exports.setSoundEnabled = setSoundEnabled;
+__exports.play = play;
+});
 __def("ui/debts.js", function (__exports) {
 // Debts and loans: what you owe, what you're owed, and how long it takes to clear.
 const { app } = __req("ui/ctx.js");
-const { html, icon, money, dateText, pageHeader, actions, forms, emptyState, progress, chip, badge, field, options, segmented, openSheet, closeSheet, confirmSheet, toast, showError, cur } = __req("ui/kit.js");
+const { html, icon, money, dateText, pageHeader, actions, forms, emptyState, progress, chip, badge, field, options, segmented, openSheet, closeSheet, confirmSheet, toast, showError, sheetOpen } = __req("ui/kit.js");
+const { play } = __req("sound.js");
 const { readAmount, amountField, textField, dateField, buttons, delBtn } = __req("ui/editors.js");
 const C = __req("calc.js");
-const { today, addDays, isIso, addMonthsClamped } = __req("dates.js");
-const { parseMinor } = __req("money.js");
+const { today, addDays, isIso, addMonthsClamped, dayDiff } = __req("dates.js");
 
 const st = () => app.store;
 const LOAN_CAT = 'Loans & debt';
@@ -4229,12 +4280,15 @@ const monthsText = (n) => (n < 12 ? `${n} month${n === 1 ? '' : 's'}` : `${Math.
 // ---------- list ----------
 function debts() {
   const s = st(), d = s.data;
-  const list = d.debts.filter((x) => !x.archived);
+  const all = d.debts.filter((x) => !x.archived);
+  const left_ = (x) => C.debtLeft(x, d.repayments, d.planned);
+  const list = all.filter((x) => left_(x) > 0), done = all.filter((x) => left_(x) === 0);
   const tot = C.debtTotals(d.debts, d.repayments, d.planned);
   const row = (x) => {
     const left = C.debtLeft(x, d.repayments, d.planned), paid = x.startMinor - left;
     const pct = Math.min(100, Math.round((paid * 100) / x.startMinor));
     const plan = left && x.monthlyMinor ? C.payoffPlan(left, x.aprBp, x.monthlyMinor) : null;
+    if (!left) return html`<a class="card goal paid-off" href="#/debt/${x.id}"><div class="goal-top">${badge('check')}<div class="row-text"><b>${x.name}</b><small>${x.direction === 'owed' ? 'Fully received' : 'Fully paid off'}${x.settledAt ? ' · ' + dateText(x.settledAt, { day: 'numeric', month: 'short', year: 'numeric' }) : ''}</small></div>${chip('Paid off', 'good')}</div></a>`;
     return html`<a class="card goal" href="#/debt/${x.id}"><div class="goal-top">${badge(x.direction === 'owed' ? 'wallet' : 'bank')}<div class="row-text"><b>${x.name}</b>
       <small>${left ? (x.monthlyMinor ? `${money(x.monthlyMinor)} a month` : 'No monthly payment set') + (plan && !plan.never ? ` · done ${when(plan.months)}` : '') : 'All settled'}</small></div>
       ${left ? html`<b>${money(left)}</b>` : chip('Settled', 'good')}</div>
@@ -4242,11 +4296,12 @@ function debts() {
   };
   return {
     html: html`${pageHeader('Debts and loans', { back: true })}
-    ${list.length ? html`<section class="card hero"><div class="trio">
+    ${all.length ? html`${list.length ? html`<section class="card hero"><div class="trio">
         <div><span class="eyebrow">You owe</span><b class="amt ${tot.owe ? 'out' : ''}">${money(tot.owe)}</b></div>
         <div><span class="eyebrow">Owed to you</span><b class="amt ${tot.owed ? 'in' : ''}">${money(tot.owed)}</b></div></div>
         <p class="muted">${tot.nOwe ? `${tot.nOwe} debt${tot.nOwe === 1 ? '' : 's'} to pay off` : 'Nothing to pay off'}${tot.nOwed ? ` · ${tot.nOwed} to collect` : ''}</p></section>
-      <div class="stack">${list.map(row)}</div>`
+      <div class="stack">${list.map(row)}</div>` : html`<section class="card hero"><p class="eyebrow">Nothing left to pay</p><p class="muted">Every debt here is cleared. Nicely done.</p></section>`}
+      ${done.length ? html`<h2 class="sec">Paid off</h2><div class="stack">${done.map(row)}</div>` : ''}`
       : emptyState('No debts or loans', 'Track a loan, a credit card, or money a friend owes you. See how long it takes to clear and watch it shrink.', html`<button class="btn primary" data-act="debt-new">Add one</button>`)}
     <button class="fab" data-act="debt-new" aria-label="Add a debt or loan">${icon('plus', 26)}</button>`,
   };
@@ -4260,6 +4315,7 @@ function debtDetail({ id }) {
   const left = C.debtLeft(x, d.repayments, d.planned), paid = x.startMinor - left;
   const pct = Math.min(100, Math.round((paid * 100) / x.startMinor));
   const owed = x.direction === 'owed';
+  const settled = left === 0;
   const plan = left && x.monthlyMinor ? C.payoffPlan(left, x.aprBp, x.monthlyMinor) : null;
   const more = x.monthlyMinor ? Math.max(1, Math.round(x.monthlyMinor * 0.25)) : 0;
   const faster = left && x.monthlyMinor && plan && !plan.never ? C.payoffPlan(left, x.aprBp, x.monthlyMinor + more) : null;
@@ -4269,12 +4325,15 @@ function debtDetail({ id }) {
   ].sort((a, b) => b.date.localeCompare(a.date));
   const nextPay = x.ruleId ? d.planned.find((p) => p.ruleId === x.ruleId && p.status === 'planned' && p.date >= t) : null;
   return {
-    html: html`${pageHeader(x.name, { back: true, right: html`<button class="icon-btn" data-act="debt-edit" data-id="${x.id}" aria-label="Edit">${icon('edit')}</button>` })}
-    <section class="card hero"><p class="eyebrow">${owed ? 'Still owed to you' : 'Left to pay'}</p><div class="hero-amt">${money(left)}</div>
+    html: html`${pageHeader(x.name, { back: true, right: settled ? '' : html`<button class="icon-btn" data-act="debt-edit" data-id="${x.id}" aria-label="Edit">${icon('edit')}</button>` })}
+    ${settled ? html`<section class="card hero trophy"><span class="trophy-badge">${icon('check', 34)}</span><h2>${owed ? 'Fully received' : 'Paid off'}</h2>
+      <p class="muted">${money(x.startMinor)} cleared${x.settledAt ? ' on ' + dateText(x.settledAt, { day: 'numeric', month: 'long', year: 'numeric' }) : ''}${x.startDate && x.settledAt && dayDiff(x.settledAt, x.startDate) > 1 ? ` · ${took(dayDiff(x.settledAt, x.startDate))} from start to finish` : ''}.</p>
+      <p class="muted">This one is finished, so it can’t take any more payments. It stays here as a record of what you achieved.</p>
+      <div class="btn-row"><button class="btn danger-ghost" data-act="debt-delete" data-id="${x.id}">${icon('trash', 16)} Remove from list</button></div></section>` : html`<section class="card hero"><p class="eyebrow">${owed ? 'Still owed to you' : 'Left to pay'}</p><div class="hero-amt">${money(left)}</div>
       <p class="muted">of ${money(x.startMinor)} · ${pct}% ${owed ? 'received' : 'paid'}</p>${progress(pct, owed ? 'sage' : '', 'Progress')}
       <ul class="plain facts"><li>${aprText(x.aprBp)}</li>${x.monthlyMinor ? html`<li>${money(x.monthlyMinor)} a month${nextPay ? html`, next on ${dateText(nextPay.date, { day: 'numeric', month: 'short' })}` : ''}</li>` : ''}</ul>
-      <div class="btn-row spread">${left ? html`<button class="btn primary" data-act="debt-pay" data-id="${x.id}">${icon('plus', 18)} X` : chip('Settled', 'good')}
-        <button class="btn" data-act="debt-add" data-id="${x.id}">${x.aprBp && !owed ? 'Add interest' : 'Add to balance'}</button></div></section>
+      <div class="btn-row spread"><button class="btn primary" data-act="debt-pay" data-id="${x.id}">${icon('plus', 18)} ${owed ? 'Money received' : 'Add payment'}</button>
+        <button class="btn" data-act="debt-add" data-id="${x.id}">${x.aprBp && !owed ? 'Add interest' : 'Add to balance'}</button></div></section>`}
     ${left ? (plan ? (plan.never
       ? html`<section class="card tl-verdict bad" role="status"><h2>${icon('info', 18)} This payment doesn’t cover the interest</h2><p>${money(x.monthlyMinor)} a month is less than the interest that builds up, so the balance would never go down. Try a higher monthly payment.</p></section>`
       : html`<section class="card tl-verdict good" role="status"><h2>${icon('check', 18)} ${owed ? 'Collected' : 'Debt-free'} around ${when(plan.months)}</h2>
@@ -4285,6 +4344,37 @@ function debtDetail({ id }) {
     ${hist.length ? html`<div class="list card flush">${hist.map((h) => { const inner = html`<span class="row-text"><b>${h.label}</b><small>${dateText(h.date, { day: 'numeric', month: 'short', year: 'numeric' })}</small></span><span class="row-amt"><span class="amt ${(h.amt < 0) === owed ? 'in' : 'out'}">${money(Math.abs(h.amt))}</span></span>`; return html`<div class="row">${h.manual ? html`<button class="row-main" data-act="debt-rep-open" data-id="${h.id}">${inner}</button>` : html`<div class="row-main">${inner}</div>`}</div>`; })}</div>`
       : emptyState('Nothing recorded yet', 'Record each payment and the balance here goes down.')}`,
   };
+}
+
+const took = (days) => (days < 60 ? `${days} days` : days < 700 ? `${Math.round(days / 30.44)} months` : `${(days / 365.25).toFixed(1).replace('.0', '')} years`);
+
+// ---------- paying one off ----------
+/** Marks debts that just reached zero as settled (once), stops their repeating payment, and celebrates. Re-opens one if a payment was removed. */
+function checkSettled() {
+  const s = st();
+  if (!s || !s.settings.onboarded) return;
+  let win = null, changed = false;
+  for (const x of s.data.debts) {
+    const left = C.debtLeft(x, s.data.repayments, s.data.planned);
+    if (left === 0 && !x.settledAt && !sheetOpen()) {
+      x.settledAt = today(); x.updatedAt = new Date().toISOString(); changed = true; win = x;
+      if (x.ruleId && s.get('rules', x.ruleId)) { s.data.planned = s.data.planned.filter((q) => !(q.ruleId === x.ruleId && q.status === 'planned')); s.pauseRule(x.ruleId, true); }
+    } else if (left > 0 && x.settledAt) {
+      x.settledAt = null; x.updatedAt = new Date().toISOString(); changed = true;
+      if (x.ruleId && s.get('rules', x.ruleId)?.paused) s.pauseRule(x.ruleId, false);
+    }
+  }
+  if (changed) s.commit();
+  if (win) celebrate(win);
+}
+function celebrate(x) {
+  const owed = x.direction === 'owed';
+  play('success');
+  openSheet(owed ? 'All received!' : 'Debt-free!', html`<div class="celebrate"><span class="trophy-badge pop">${icon('check', 40)}</span>
+    <h3>${owed ? `${x.name} is fully repaid to you` : `You paid off ${x.name}`}</h3>
+    <p class="muted">${money(x.startMinor)} ${owed ? 'came back to you' : 'cleared'}${x.startDate && dayDiff(today(), x.startDate) > 1 ? ' in ' + took(dayDiff(today(), x.startDate)) : ''}. That’s real progress, well done.</p>
+    <p class="muted small-p">It stays in your list as paid off, and its monthly reminders are switched off.</p>
+    <div class="btn-row"><span class="grow"></span><button class="btn primary" data-act="sheet-close">Thank you</button></div></div>`);
 }
 
 // ---------- add / edit ----------
@@ -4336,7 +4426,7 @@ forms.debt = (fd, form) => {
   return true;
 };
 actions['debt-new'] = () => { if (!st().activeAccounts().length) { toast('Add an account first.'); return; } openDebtEditor(); };
-actions['debt-edit'] = (el) => openDebtEditor(el.dataset.id);
+actions['debt-edit'] = (el) => { const x = st().get('debts', el.dataset.id); if (x && !C.debtLeft(x, st().data.repayments, st().data.planned)) { toast('Paid-off debts are kept as they are.'); return; } openDebtEditor(el.dataset.id); };
 actions['debt-delete'] = async (el) => {
   const ok = await confirmSheet({ title: 'Delete this debt?', message: 'The debt, its history and its repeating payment are removed. Transactions you already recorded in Activity stay.', confirmLabel: 'Delete', danger: true });
   if (!ok) return;
@@ -4351,6 +4441,7 @@ actions['debt-pay'] = (el) => {
   const s = st(), x = s.get('debts', el.dataset.id); if (!x) return;
   const owed = x.direction === 'owed';
   const left = C.debtLeft(x, s.data.repayments, s.data.planned);
+  if (!left) { toast('This one is already paid off.'); return; }
   openSheet(owed ? 'Money received' : 'Record a payment', html`
     <form data-form="debt-pay" novalidate><input type="hidden" name="id" value="${x.id}">
       ${amountField('amount', x.monthlyMinor ? Math.min(x.monthlyMinor, left) : null, 'Amount')}
@@ -4361,6 +4452,7 @@ actions['debt-pay'] = (el) => {
 };
 forms['debt-pay'] = (fd, form) => {
   const s = st(), x = s.get('debts', fd.get('id')); if (!x) return true;
+  if (!C.debtLeft(x, s.data.repayments, s.data.planned)) { toast('This one is already paid off.'); return true; }
   const amount = readAmount(form, 'amount'); if (amount === undefined) return false;
   const date = String(fd.get('date') || ''); if (!isIso(date)) { showError(form, 'date', 'Choose a date.'); return false; }
   const owed = x.direction === 'owed';
@@ -4376,6 +4468,7 @@ forms['debt-pay'] = (fd, form) => {
 };
 actions['debt-add'] = (el) => {
   const x = st().get('debts', el.dataset.id); if (!x) return;
+  if (!C.debtLeft(x, st().data.repayments, st().data.planned)) { toast('This one is already paid off.'); return; }
   openSheet(x.direction === 'owed' ? 'Add to balance' : x.aprBp ? 'Add interest or fees' : 'Add to balance', html`
     <form data-form="debt-add" novalidate><input type="hidden" name="id" value="${x.id}">
       <p class="muted">Use this when the balance grows: interest your lender added, a fee, or you borrowed more. It doesn’t move any account money.</p>
@@ -4402,6 +4495,7 @@ actions['debt-rep-open'] = async (el) => {
 
 __exports.debts = debts;
 __exports.debtDetail = debtDetail;
+__exports.checkSettled = checkSettled;
 __exports.openDebtEditor = openDebtEditor;
 });
 __def("ui/lock.js", function (__exports) {
@@ -4455,57 +4549,6 @@ function showLock(onUnlocked) {
 
 __exports.showLock = showLock;
 });
-__def("sound.js", function (__exports) {
-// Soft, calming interface sounds made on the fly with the Web Audio API.
-// No audio files, nothing downloaded. Quiet by design; can be turned off in Preferences.
-let ctx = null, master = null, enabled = true, last = 0;
-
-function setSoundEnabled(on) { enabled = !!on; }
-
-function ensure() {
-  if (!enabled) return null;
-  const AC = window.AudioContext || window.webkitAudioContext;
-  if (!AC) return null;
-  if (!ctx) { try { ctx = new AC(); master = ctx.createGain(); master.gain.value = 0.55; master.connect(ctx.destination); } catch { return null; } }
-  if (ctx.state === 'suspended') ctx.resume().catch(() => {});
-  return ctx;
-}
-
-// one soft sine "bell" note with a gentle attack and long, smooth fade
-function note(freq, at, dur, vol) {
-  const o = ctx.createOscillator(), o2 = ctx.createOscillator(), g = ctx.createGain();
-  o.type = 'sine'; o.frequency.value = freq;
-  o2.type = 'sine'; o2.frequency.value = freq * 2; // faint octave for warmth
-  const g2 = ctx.createGain(); g2.gain.value = 0.18;
-  const t = ctx.currentTime + at;
-  g.gain.setValueAtTime(0.0001, t);
-  g.gain.exponentialRampToValueAtTime(vol, t + 0.015);
-  g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-  o.connect(g); o2.connect(g2); g2.connect(g); g.connect(master);
-  o.start(t); o2.start(t); o.stop(t + dur + 0.05); o2.stop(t + dur + 0.05);
-}
-
-const SOUNDS = {
-  tap:     () => note(523.25, 0, 0.16, 0.05),                                   // C5, barely there
-  tab:     () => note(659.25, 0, 0.2, 0.06),                                    // E5
-  open:    () => { note(440, 0, 0.3, 0.05); note(659.25, 0.06, 0.3, 0.04); },  // rising
-  close:   () => { note(659.25, 0, 0.25, 0.04); note(440, 0.06, 0.28, 0.04); },// falling
-  success: () => { note(523.25, 0, 0.7, 0.07); note(659.25, 0.11, 0.7, 0.06); note(783.99, 0.22, 1.0, 0.06); }, // C-E-G chime
-  soft:    () => note(392, 0, 0.35, 0.05),
-};
-
-function play(name) {
-  const now = performance.now();
-  if (now - last < 45) return; // never machine-gun
-  const fn = SOUNDS[name];
-  if (!fn || !ensure()) return;
-  last = now;
-  try { fn(); } catch { /* sound is optional */ }
-}
-
-__exports.setSoundEnabled = setSoundEnabled;
-__exports.play = play;
-});
 __def("app.js", function (__exports) {
 // Start-up, routing, event delegation, locking. Nothing here uses the network except loading its own files.
 const { app } = __req("ui/ctx.js");
@@ -4525,7 +4568,7 @@ const { planScreen } = __req("ui/plan.js");
 const { timeline } = __req("ui/timeline.js");
 __req("ui/workpay.js");
 const { bankImport } = __req("ui/bankimport.js");
-const { debts, debtDetail } = __req("ui/debts.js");
+const { debts, debtDetail, checkSettled } = __req("ui/debts.js");
 const { showLock } = __req("ui/lock.js");
 const { today } = __req("dates.js");
 const { play, setSoundEnabled } = __req("sound.js");
@@ -4583,7 +4626,7 @@ function doRender() {
       out = found.fn(found.m);
     }
     view.innerHTML = out.html.s;
-    const goalOrDetail = /^#\/goal\//.test(hash);
+    const goalOrDetail = /^#\/(goal\/|debt)/.test(hash);
     view.className = onboarding_ ? '' : (tab === 'overview' && /^#\/overview$/.test(hash) ? 'dash' : tab === 'savings' && !goalOrDetail ? 'dash' : tab === 'calendar' ? 'cal' : 'narrow');
   } catch (err) {
     console.error(err);
@@ -4600,6 +4643,7 @@ function doRender() {
   }
   const banner = $('#storage-banner');
   if (banner) banner.hidden = persist.status.ok;
+  if (!onboarding_) { try { checkSettled(); } catch (e) { console.error(e); } } // a paid-off debt gets its celebration
 }
 
 // ---------- start / lock ----------

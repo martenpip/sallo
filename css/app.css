@@ -479,3 +479,12 @@ input[type=checkbox]:checked::after { transform: rotate(45deg) translate(-1px, -
 input[type=checkbox]:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
 fieldset { min-width: 0; max-width: 100%; }
 .row2 > * { min-width: 0; }
+
+/* paid-off debts */
+.trophy { text-align: center; }
+.trophy-badge { display: inline-grid; place-items: center; width: 72px; height: 72px; border-radius: 50%; background: var(--sage-tint); color: var(--income); box-shadow: 0 0 0 6px color-mix(in srgb, var(--income) 14%, transparent); margin: 6px auto 8px; }
+.trophy-badge.pop { animation: trophyPop .7s cubic-bezier(.2, 1.4, .4, 1) both; }
+@keyframes trophyPop { from { transform: scale(.3); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+.celebrate { text-align: center; padding: 4px 0 6px; } .celebrate h3 { margin: 6px 0; font-size: 1.25rem; }
+.card.paid-off { opacity: .92; border-left: 4px solid var(--income); }
+@media (prefers-reduced-motion: reduce) { .trophy-badge.pop { animation: none; } }

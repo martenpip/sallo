@@ -16,7 +16,7 @@ import { planScreen } from './ui/plan.js';
 import { timeline } from './ui/timeline.js';
 import './ui/workpay.js';
 import { bankImport } from './ui/bankimport.js';
-import { debts, debtDetail } from './ui/debts.js';
+import { debts, debtDetail, checkSettled } from './ui/debts.js';
 import { showLock } from './ui/lock.js';
 import { today } from './dates.js';
 import { play, setSoundEnabled } from './sound.js';
@@ -74,7 +74,7 @@ function doRender() {
       out = found.fn(found.m);
     }
     view.innerHTML = out.html.s;
-    const goalOrDetail = /^#\/goal\//.test(hash);
+    const goalOrDetail = /^#\/(goal\/|debt)/.test(hash);
     view.className = onboarding_ ? '' : (tab === 'overview' && /^#\/overview$/.test(hash) ? 'dash' : tab === 'savings' && !goalOrDetail ? 'dash' : tab === 'calendar' ? 'cal' : 'narrow');
   } catch (err) {
     console.error(err);
@@ -91,6 +91,7 @@ function doRender() {
   }
   const banner = $('#storage-banner');
   if (banner) banner.hidden = persist.status.ok;
+  if (!onboarding_) { try { checkSettled(); } catch (e) { console.error(e); } } // a paid-off debt gets its celebration
 }
 
 // ---------- start / lock ----------
