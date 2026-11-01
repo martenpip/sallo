@@ -5,6 +5,7 @@ import { today, periodFor, shiftPeriod, addDays, monthName, dayDiff, formatDate 
 import { plannedRow } from './rows.js';
 import { guardFor, guardLines, guardHeadline, skipRuleId } from './guard.js';
 import { planCard } from './plan.js';
+import { ledger } from '../household.js';
 import { ACCOUNT_ICON } from './editors.js';
 
 // distinct, calm colours that stay readable on both light and dark cards
@@ -85,7 +86,7 @@ export function overview() {
       <div class="hero-amt" data-test="safe">${safe.safe < 0 ? '−' + money(-safe.safe) : money(safe.safe)}</div>
       ${safe.safe < 0 ? html`<p class="muted">You’re short for what’s coming up. Hold off on non-essentials if you can.</p>`
         : html`<p class="muted">About <b>${money(safe.perDay)}</b> a day · <b>${money(safe.perWeek)}</b> a week</p>`}
-      <a class="link" href="#/timeline">See your money timeline</a>
+      <a class="link" href="#/timeline">See your money timeline</a> <span class="muted">·</span> <a class="link" href="#/afford">Can I afford something?</a>
       ${!safe.byIncome ? html`<a class="btn small" href="#/settings/pay">${icon('cash', 16)} Add your pay and payday for a sharper number</a>` : ''}
       <p class="muted small-p">${safe.work ? html`Counts your daily pay and every bill in the next 30 days.` : html`${money(safe.balance)} balance${safe.bills ? ` − ${money(safe.bills)} bills due` : ''}`}${safe.allocated ? ` − ${money(safe.allocated)} set aside` : ''}${safe.byIncome ? html` · <a class="link" href="#/settings/pay">Pay settings</a>` : ''}</p></section>` : ''}
     ${gLines.length ? html`<section class="card guard ${gLines.some((l) => l.level === 'high') ? 'high' : ''}" aria-label="Spending check" role="status">
@@ -127,6 +128,14 @@ export function overview() {
 
     <section class="card" aria-label="Coming up"><div class="card-head"><h2>Coming up</h2><a class="link" href="#/upcoming">See all</a></div>
       ${next.length ? html`<div class="list">${next.map((x) => plannedRow(x))}</div>` : html`<p class="muted">Nothing planned. Add bills, income or events in Upcoming.</p>`}</section>
+
+    ${(() => { const h = set.household; if (!h) return '';
+      const l = ledger({ household: h, mine: d.txns.filter((x) => x.shared && x.type === 'expense'), theirs: d.sharedIn, start: p.start, endExclusive: p.endExclusive });
+      const her = h.config.names[h.partnerId], bud = h.config.budgetMinor;
+      return html`<section class="card" aria-label="Couples"><div class="card-head"><h2>${icon('heart', 18)} With ${her}</h2><a class="link" href="#/household">Open</a></div>
+        <div class="trio"><div><span class="eyebrow">Spent together</span><b class="amt">${money(l.total)}</b></div><div><span class="eyebrow">${bud ? 'Shared budget' : 'Your share'}</span><b class="amt">${money(bud || l.shareMe)}</b></div></div>
+        ${bud ? progress(Math.min(100, Math.round((l.total * 100) / bud)), l.total > bud ? 'over' : 'sage', 'Shared budget used') : ''}
+        <p class="muted small-p">${!l.total || !l.balance ? 'You’re even for this period.' : l.balance > 0 ? `${her} owes you ${money(l.balance)}.` : `You owe ${her} ${money(-l.balance)}.`}</p></section>`; })()}
 
     ${(() => { const dt = C.debtTotals(d.debts, d.repayments, d.planned); return dt.owe || dt.owed ? html`<section class="card" aria-label="Debts and loans"><div class="card-head"><h2>${icon('bank', 18)} Debts and loans</h2><a class="link" href="#/debts">See all</a></div><div class="trio"><div><span class="eyebrow">You owe</span><b class="amt ${dt.owe ? 'out' : ''}">${money(dt.owe)}</b></div><div><span class="eyebrow">Owed to you</span><b class="amt ${dt.owed ? 'in' : ''}">${money(dt.owed)}</b></div></div></section>` : ''; })()}
 

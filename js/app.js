@@ -17,6 +17,8 @@ import { timeline } from './ui/timeline.js';
 import './ui/workpay.js';
 import { bankImport } from './ui/bankimport.js';
 import { debts, debtDetail, checkSettled } from './ui/debts.js';
+import { household } from './ui/household.js';
+import { afford } from './ui/afford.js';
 import { showLock } from './ui/lock.js';
 import { today } from './dates.js';
 import { play, setSoundEnabled } from './sound.js';
@@ -30,7 +32,7 @@ const ROUTES = [
   [/^\/settings$/, St.settings, 'overview'], [/^\/settings\/preferences$/, St.preferences, 'overview'],
   [/^\/settings\/pay$/, St.payScreen, 'overview'], [/^\/settings\/plan$/, planScreen, 'overview'], [/^\/timeline$/, timeline, 'overview'], [/^\/settings\/accounts$/, St.accountsScreen, 'overview'], [/^\/settings\/categories$/, St.categoriesScreen, 'overview'],
   [/^\/settings\/budgets$/, St.budgetsScreen, 'overview'], [/^\/settings\/security$/, St.security, 'overview'],
-  [/^\/settings\/data$/, St.dataScreen, 'overview'], [/^\/settings\/bank$/, bankImport, 'overview'], [/^\/debts$/, debts, 'savings'], [/^\/debt\/(.+)$/, (m) => debtDetail({ id: m[1] }), 'savings'], [/^\/settings\/about$/, St.about, 'overview'],
+  [/^\/settings\/data$/, St.dataScreen, 'overview'], [/^\/settings\/bank$/, bankImport, 'overview'], [/^\/household$/, household, 'overview'], [/^\/afford$/, afford, 'overview'], [/^\/debts$/, debts, 'savings'], [/^\/debt\/(.+)$/, (m) => debtDetail({ id: m[1] }), 'savings'], [/^\/settings\/about$/, St.about, 'overview'],
 ];
 const TITLES = { overview: 'Overview', activity: 'Activity', calendar: 'Calendar', upcoming: 'Upcoming', savings: 'Savings' };
 

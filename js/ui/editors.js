@@ -63,6 +63,13 @@ const idOrNull = (v) => (v ? String(v) : null);
 export const buttons = ({ del = '', saveLabel = 'Save' } = {}) => html`<div class="btn-row">${del}<span class="grow"></span><button type="button" class="btn ghost" data-act="sheet-close">Cancel</button><button class="btn primary" type="submit">${saveLabel}</button></div>`;
 export const delBtn = (act, id, label = 'Delete') => html`<button type="button" class="btn danger-ghost" data-act="${act}" data-id="${id}">${icon('trash', 16)} ${label}</button>`;
 
+/** 'Shared with partner' tick, only once a household is set up. In the new-item forms it shows for expenses only. */
+function sharedBox(checked, byKind = true) {
+  if (!st().settings.household) return '';
+  const w = html`<label class="check inline"><input type="checkbox" name="shared" ${checked ? 'checked' : ''}><span><b>Shared with ${st().settings.household.config.names[st().settings.household.partnerId]}</b><small>Counts in your shared household budget and bill split.</small></span></label>`;
+  return byKind ? html`<div data-for="expense">${w}</div>` : w;
+}
+
 // ---------- transactions ----------
 export function openTxnEditor({ id, type = 'expense', date, accountId } = {}) {
   const s = st();
@@ -94,6 +101,7 @@ export function openTxnEditor({ id, type = 'expense', date, accountId } = {}) {
       ${recents.length ? html`<div class="recents" role="group" aria-label="Add again with one tap"><span class="eyebrow">Same as before? Tap to add again today</span><div class="chips">${recents.map((x) => html`<button type="button" class="pill recent" data-act="txn-repeat" data-id="${x.id}"><b>${x.name}</b> ${x.type === 'income' ? '+' : ''}${money(x.amountMinor)}</button>`)}</div></div>` : ''}
       ${segmented('type', [['expense', 'Expense'], ['income', 'Income'], ['transfer', 'Transfer']], ty)}
       ${amountField('amount', t?.amountMinor)}
+      ${sharedBox(t?.shared)}
       ${textField('name', 'Description', t?.name || '', { ph: 'What was it for?', attrs: 'data-input="autocat"' })}
       <div data-for="expense">${field('Category', html`<select id="f-catx" name="categoryExpense" data-input="catmanual" ${raw(t?.categoryId ? 'data-touched="1"' : '')}>${categoryOptions('expense', t?.categoryId || lastOf('expense'))}</select>`, '', 'f-catx')}</div>
       <div data-for="income">${field('Category', html`<select id="f-cati" name="categoryIncome" data-input="catmanual" ${raw(t?.categoryId ? 'data-touched="1"' : '')}>${categoryOptions('income', t?.categoryId || lastOf('income'))}</select>`, '', 'f-cati')}</div>
@@ -114,7 +122,7 @@ forms.txn = (fd, form) => {
   if (!isIso(date)) { showError(form, 'date', 'Choose a date.'); return false; }
   const accountId = fd.get('accountId');
   if (!accountId) { showError(form, 'accountId', 'Choose an account.'); return false; }
-  const rec = { type, amountMinor, name: String(fd.get('name') || '').trim(), accountId, date, notes: String(fd.get('notes') || '').trim() };
+  const rec = { type, amountMinor, name: String(fd.get('name') || '').trim(), accountId, date, notes: String(fd.get('notes') || '').trim(), shared: type === 'expense' && !!fd.get('shared') };
   if (type === 'transfer') {
     const to = fd.get('toAccountId');
     if (!to) { showError(form, 'toAccountId', 'Choose where the money goes.'); return false; }
@@ -158,6 +166,7 @@ export function openPlannedEditor({ id, kind = 'expense', date } = {}) {
       ${rule ? html`<p class="note">${icon('repeat', 16)} Part of a series (${describeRecurrence(rule.unit, rule.every)}). Changes here affect <b>this date only</b>. <button type="button" class="link" data-act="edit-series" data-id="${rule.id}">Edit the whole series</button></p>` : ''}
       ${textField('name', 'Name', p?.name || '', { required: true, ph: k === 'event' ? 'Dentist, birthday…' : 'Rent, salary, subscription…', attrs: 'data-input="autocat"' })}
       <div data-for="expense income">${amountField('amount', p?.amountMinor)}</div>
+      ${sharedBox(p?.shared)}
       ${!p ? html`<label class="check inline multi-toggle"><input type="checkbox" name="multi" data-change="md-mode"><span><b>Pick several specific days</b><small>For pay by the day, or anything on a few chosen dates. Choose the days and set the amount for each.</small></span></label>
         <div class="multi-box" hidden></div>` : ''}
       <div data-hide-multi>${dateField('date', 'Date', p?.date || date || today())}</div>
@@ -188,7 +197,7 @@ forms.planned = (fd, form) => {
   const rec = {
     kind, name, amountMinor, date, time: fd.get('time') || '', notes: String(fd.get('notes') || '').trim(),
     categoryId: kind === 'event' ? null : idOrNull(fd.get(kind === 'income' ? 'categoryIncome' : 'categoryExpense')),
-    accountId: kind === 'event' ? null : idOrNull(fd.get('accountId')),
+    accountId: kind === 'event' ? null : idOrNull(fd.get('accountId')), shared: kind === 'expense' && !!fd.get('shared'),
   };
   const id = fd.get('id');
   if (id) { s.updatePlanned(id, rec); toast('Saved'); return true; }
@@ -197,7 +206,7 @@ forms.planned = (fd, form) => {
     const every = Math.max(1, Math.min(99, parseInt(fd.get('every'), 10) || 1));
     const endDate = fd.get('endDate') || null;
     if (endDate && (!isIso(endDate) || endDate < date)) { showError(form, 'endDate', 'The end date must be on or after the start date.'); return false; }
-    s.addRule({ kind, name, amountMinor, categoryId: rec.categoryId, accountId: rec.accountId, time: rec.time, notes: rec.notes, startDate: date, unit, every, endDate });
+    s.addRule({ kind, name, amountMinor, categoryId: rec.categoryId, accountId: rec.accountId, time: rec.time, notes: rec.notes, shared: rec.shared, startDate: date, unit, every, endDate });
     toast('Recurring item added');
   } else { s.addPlanned(rec); toast('Added'); }
   return true;
@@ -303,6 +312,7 @@ export function openRuleEditor(id) {
       <p class="note">Updates every upcoming date that you haven’t edited yourself. Dates you changed or skipped are kept as they are.</p>
       ${textField('name', 'Name', r.name, { required: true })}
       ${r.kind !== 'event' ? amountField('amount', r.amountMinor) : ''}
+      ${r.kind === 'expense' ? sharedBox(r.shared, false) : ''}
       ${r.kind !== 'event' ? field('Category', html`<select id="f-cat" name="categoryId">${categoryOptions(r.kind, r.categoryId)}</select>`, '', 'f-cat') : ''}
       ${r.kind !== 'event' ? field('Account', html`<select id="f-account" name="accountId">${accountOptions(r.accountId, { empty: 'Choose when paying' })}</select>`, '', 'f-account') : ''}
       ${dateField('startDate', 'First date', r.startDate)}
@@ -325,7 +335,7 @@ forms.rule = (fd, form) => {
   if (endDate && (!isIso(endDate) || endDate < startDate)) { showError(form, 'endDate', 'The end date must be on or after the first date.'); return false; }
   s.updateRule(r.id, {
     name, amountMinor, startDate, endDate, unit: fd.get('unit'), every: Math.max(1, Math.min(99, parseInt(fd.get('every'), 10) || 1)),
-    categoryId: idOrNull(fd.get('categoryId')), accountId: idOrNull(fd.get('accountId')), notes: String(fd.get('notes') || '').trim(),
+    categoryId: idOrNull(fd.get('categoryId')), accountId: idOrNull(fd.get('accountId')), notes: String(fd.get('notes') || '').trim(), shared: r.kind === 'expense' && !!fd.get('shared'),
   });
   toast('Series updated');
   return true;

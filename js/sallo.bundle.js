@@ -814,6 +814,48 @@ function debtTotals(debts, repayments, planned = []) {
   return { owe, owed, nOwe, nOwed };
 }
 
+// ---------- "Can I afford this?" ----------
+/** Balance at the end of each day from `from` to `to`: bills and planned income on their dates, work-day pay after them. */
+function dailyBalances({ accounts, txns, planned, workPay, skipRuleId }, from, to) {
+  let bal = totalBalance(accounts, accountBalances(accounts, txns));
+  const net = new Map();
+  for (const p of planned) {
+    if (p.status !== 'planned' || p.kind === 'event' || !p.amountMinor || (skipRuleId && p.ruleId === skipRuleId) || p.date > to) continue;
+    const d = p.date < from ? from : p.date;
+    net.set(d, (net.get(d) || 0) + (p.kind === 'income' ? p.amountMinor : -p.amountMinor));
+  }
+  const out = [];
+  for (let d = from; d <= to; d = addDays(d, 1)) {
+    bal += net.get(d) || 0;
+    if (d > from && isWorkDay(workPay, d)) bal += workPay.dailyMinor;
+    out.push({ date: d, balance: bal });
+  }
+  return out;
+}
+/**
+ * Would a purchase of `price` on `date` leave you OK? Looks 45 days past the purchase, counts planned bills and income
+ * (and work-day pay), and keeps money set aside for goals untouched. `cushion` is a little room that should remain.
+ */
+function affordCheck(data, { price, date, today: t, allocated = 0, cushion = 0 }) {
+  const HORIZON = 45, SEARCH = 90;
+  const series = dailyBalances(data, t, addDays(t, SEARCH + HORIZON));
+  const safeAfter = (c) => {
+    const end = addDays(c, HORIZON);
+    let min = Infinity;
+    for (const x of series) { if (x.date > end) break; const b = x.date >= c ? x.balance - price : x.balance; if (b < min) min = b; }
+    return min - allocated;
+  };
+  let baseMin = Infinity, baseDay = t;
+  for (const x of series) { if (x.date > addDays(date, HORIZON)) break; if (x.balance < baseMin) { baseMin = x.balance; baseDay = x.date; } }
+  const after = safeAfter(date);
+  const verdict = after >= cushion ? 'yes' : after >= 0 ? 'tight' : 'no';
+  let firstShort = null;
+  if (after < 0) for (const x of series) { if (x.date > addDays(date, HORIZON)) break; if (x.date >= date && x.balance - price - allocated < 0) { firstShort = x.date; break; } }
+  let earliest = null;
+  if (verdict !== 'yes') for (let c = addDays(date, 1); c <= addDays(t, SEARCH); c = addDays(c, 1)) if (safeAfter(c) >= cushion) { earliest = c; break; }
+  return { verdict, lowestAfter: after + allocated, safeAfter: after, lowestNow: baseMin, lowestNowDate: baseDay, firstShort, earliest, shortBy: after < 0 ? -after : 0, cushion };
+}
+
 __exports.isExpenseLike = isExpenseLike;
 __exports.accountBalances = accountBalances;
 __exports.totalBalance = totalBalance;
@@ -856,6 +898,8 @@ __exports.debtPaid = debtPaid;
 __exports.debtLeft = debtLeft;
 __exports.payoffPlan = payoffPlan;
 __exports.debtTotals = debtTotals;
+__exports.dailyBalances = dailyBalances;
+__exports.affordCheck = affordCheck;
 __exports.parse = parse;
 });
 __def("money.js", function (__exports) {
@@ -973,7 +1017,7 @@ const { ESSENTIAL_DEFAULTS } = __req("calc.js");
 const { CURRENCIES } = __req("money.js");
 
 const SCHEMA = 1;
-const COLLS = ['accounts', 'categories', 'txns', 'planned', 'rules', 'goals', 'contribs', 'budgets', 'debts', 'repayments'];
+const COLLS = ['accounts', 'categories', 'txns', 'planned', 'rules', 'goals', 'contribs', 'budgets', 'debts', 'repayments', 'sharedIn'];
 const HORIZON_DAYS = 400;
 
 function uid() {
@@ -983,7 +1027,7 @@ function uid() {
 const nowIso = () => new Date().toISOString();
 
 const DEFAULT_SETTINGS = () => ({
-  currency: 'EUR', locale: '', weekStart: 1, monthStart: 1, theme: 'system', sound: true, nudges: true, guard: true, wantsLimit: 30, demo: false, pay: null, plan: null, workPay: null, orientation: 'auto',
+  currency: 'EUR', locale: '', weekStart: 1, monthStart: 1, theme: 'system', sound: true, nudges: true, guard: true, wantsLimit: 30, demo: false, pay: null, plan: null, workPay: null, household: null, orientation: 'auto',
   onboarded: false, hideAmounts: false, lastExportAt: null, createdAt: nowIso(),
 });
 
@@ -1041,7 +1085,7 @@ class Store {
 
   // ---------- transactions ----------
   addTxn(t) {
-    const rec = this.add('txns', { notes: '', name: '', categoryId: null, toAccountId: null, plannedId: null, ...t });
+    const rec = this.add('txns', { notes: '', name: '', categoryId: null, toAccountId: null, plannedId: null, shared: false, ...t });
     this.commit();
     return rec;
   }
@@ -1060,7 +1104,7 @@ class Store {
 
   // ---------- planned items ----------
   addPlanned(p) {
-    const rec = this.add('planned', { time: '', categoryId: null, accountId: null, status: 'planned', ruleId: null, overridden: false, notes: '', txnId: null, amountMinor: 0, ...p });
+    const rec = this.add('planned', { time: '', categoryId: null, accountId: null, status: 'planned', ruleId: null, overridden: false, notes: '', txnId: null, amountMinor: 0, shared: false, ...p });
     this.commit();
     return rec;
   }
@@ -1091,7 +1135,7 @@ class Store {
     if (!acc) throw new Error('Add an account first.');
     const t = this.add('txns', {
       type: p.kind, amountMinor: amountMinor ?? p.amountMinor, name: p.name, categoryId: p.categoryId,
-      accountId: acc, toAccountId: null, date: date || this.today(), notes: p.notes || '', plannedId: p.id,
+      accountId: acc, toAccountId: null, date: date || this.today(), notes: p.notes || '', plannedId: p.id, shared: !!p.shared,
     });
     this.update('planned', id, { status: 'done', txnId: t.id });
     this.commit();
@@ -1120,7 +1164,7 @@ class Store {
         this.data.planned.push({
           id: uid(), kind: r.kind, name: r.name, amountMinor: r.amountMinor, date: d, time: r.time || '',
           categoryId: r.categoryId || null, accountId: r.accountId || null, status: 'planned', ruleId: r.id,
-          overridden: false, notes: r.notes || '', txnId: null, updatedAt: nowIso(),
+          overridden: false, notes: r.notes || '', txnId: null, shared: !!r.shared, updatedAt: nowIso(),
         });
         changed = true;
       }
@@ -1132,7 +1176,7 @@ class Store {
   addRule(r) {
     const t = this.today();
     const rule = this.add('rules', {
-      time: '', categoryId: null, accountId: null, endDate: null, every: 1, paused: false, notes: '',
+      time: '', categoryId: null, accountId: null, endDate: null, every: 1, paused: false, notes: '', shared: false,
       trackFrom: r.startDate >= t ? r.startDate : t, ...r,
     });
     if (r.trackFrom === undefined) rule.trackFrom = r.startDate >= t ? r.startDate : t;
@@ -1213,7 +1257,7 @@ class Store {
     const deadRules = new Set(d.rules.filter((r) => last || r.accountId === id).map((r) => r.id));
     d.rules = d.rules.filter((r) => !deadRules.has(r.id));
     d.planned = d.planned.filter((p) => !(last || p.accountId === id || (p.txnId && gone.has(p.txnId)) || (p.ruleId && deadRules.has(p.ruleId))));
-    if (last) { d.goals = []; d.contribs = []; d.budgets = []; d.debts = []; d.repayments = []; d.settings.plan = null; d.settings.demo = false; }
+    if (last) { d.goals = []; d.contribs = []; d.budgets = []; d.debts = []; d.repayments = []; d.sharedIn = []; d.settings.household = null; d.settings.plan = null; d.settings.demo = false; }
     if (d.settings.pay && !d.rules.some((r) => r.id === d.settings.pay.ruleId)) d.settings.pay = null;
     this.remove('accounts', id);
     this.commit();
@@ -1283,25 +1327,26 @@ const CLEAN = {
     const amt = int(r.amountMinor);
     if (!idOf(r.id) || !type || amt === null || amt < 0 || !isoOr(r.date) || !idOf(r.accountId)) return null;
     if (type === 'transfer' && !idOf(r.toAccountId)) return null;
-    return { id: r.id, type, amountMinor: amt, name: str(r.name), categoryId: idOf(r.categoryId), accountId: r.accountId, toAccountId: type === 'transfer' ? r.toAccountId : null, date: r.date, notes: str(r.notes, 2000), plannedId: idOf(r.plannedId), updatedAt: stamp(r.updatedAt) };
+    return { id: r.id, type, amountMinor: amt, name: str(r.name), categoryId: idOf(r.categoryId), accountId: r.accountId, toAccountId: type === 'transfer' ? r.toAccountId : null, date: r.date, notes: str(r.notes, 2000), plannedId: idOf(r.plannedId), shared: bool(r.shared) && type === 'expense', updatedAt: stamp(r.updatedAt) };
   },
   planned: (r) => {
     const kind = oneOf(r.kind, ['expense', 'income', 'event'], null);
     const amt = int(r.amountMinor) ?? 0;
     if (!idOf(r.id) || !kind || !isoOr(r.date) || !str(r.name) || amt < 0) return null;
-    return { id: r.id, kind, name: str(r.name), amountMinor: amt, date: r.date, time: /^\d{2}:\d{2}$/.test(r.time || '') ? r.time : '', categoryId: idOf(r.categoryId), accountId: idOf(r.accountId), status: oneOf(r.status, ['planned', 'done', 'skipped'], 'planned'), ruleId: idOf(r.ruleId), overridden: bool(r.overridden), notes: str(r.notes, 2000), txnId: idOf(r.txnId), updatedAt: stamp(r.updatedAt) };
+    return { id: r.id, kind, name: str(r.name), amountMinor: amt, date: r.date, time: /^\d{2}:\d{2}$/.test(r.time || '') ? r.time : '', categoryId: idOf(r.categoryId), accountId: idOf(r.accountId), status: oneOf(r.status, ['planned', 'done', 'skipped'], 'planned'), ruleId: idOf(r.ruleId), overridden: bool(r.overridden), notes: str(r.notes, 2000), txnId: idOf(r.txnId), shared: bool(r.shared) && kind === 'expense', updatedAt: stamp(r.updatedAt) };
   },
   rules: (r) => {
     const kind = oneOf(r.kind, ['expense', 'income', 'event'], null);
     const unit = oneOf(r.unit, ['day', 'week', 'month', 'year'], null);
     const every = int(r.every);
     if (!idOf(r.id) || !kind || !unit || !every || every < 1 || every > 999 || !isoOr(r.startDate) || !str(r.name)) return null;
-    return { id: r.id, kind, name: str(r.name), amountMinor: Math.max(0, int(r.amountMinor) ?? 0), categoryId: idOf(r.categoryId), accountId: idOf(r.accountId), time: /^\d{2}:\d{2}$/.test(r.time || '') ? r.time : '', startDate: r.startDate, trackFrom: isoOr(r.trackFrom) || r.startDate, endDate: isoOr(r.endDate), unit, every, paused: bool(r.paused), notes: str(r.notes, 2000), updatedAt: stamp(r.updatedAt) };
+    return { id: r.id, kind, name: str(r.name), amountMinor: Math.max(0, int(r.amountMinor) ?? 0), categoryId: idOf(r.categoryId), accountId: idOf(r.accountId), time: /^\d{2}:\d{2}$/.test(r.time || '') ? r.time : '', startDate: r.startDate, trackFrom: isoOr(r.trackFrom) || r.startDate, endDate: isoOr(r.endDate), unit, every, paused: bool(r.paused), notes: str(r.notes, 2000), shared: bool(r.shared) && kind === 'expense', updatedAt: stamp(r.updatedAt) };
   },
   goals: (r) => (idOf(r.id) && str(r.name) && int(r.targetMinor) > 0 ? { id: r.id, name: str(r.name), targetMinor: r.targetMinor, deadline: isoOr(r.deadline), autoPct: Number.isInteger(r.autoPct) && r.autoPct >= 0 && r.autoPct <= 50 ? r.autoPct : 0, icon: str(r.icon, 20) || 'piggy', archived: bool(r.archived), note: str(r.note, 1000), updatedAt: stamp(r.updatedAt) } : null),
   contribs: (r) => (idOf(r.id) && idOf(r.goalId) && int(r.amountMinor) !== null && isoOr(r.date) ? { id: r.id, goalId: r.goalId, amountMinor: r.amountMinor, date: r.date, note: str(r.note, 500), updatedAt: stamp(r.updatedAt) } : null),
   debts: (r) => (idOf(r.id) && str(r.name) && int(r.startMinor) > 0 ? { id: r.id, name: str(r.name), direction: oneOf(r.direction, ['owe', 'owed'], 'owe'), startMinor: r.startMinor, aprBp: Number.isInteger(r.aprBp) && r.aprBp >= 0 && r.aprBp <= 10000 ? r.aprBp : 0, monthlyMinor: Math.max(0, int(r.monthlyMinor) ?? 0), ruleId: idOf(r.ruleId), accountId: idOf(r.accountId), startDate: isoOr(r.startDate), settledAt: isoOr(r.settledAt), note: str(r.note, 1000), archived: bool(r.archived), updatedAt: stamp(r.updatedAt) } : null),
   repayments: (r) => (idOf(r.id) && idOf(r.debtId) && int(r.amountMinor) && isoOr(r.date) ? { id: r.id, debtId: r.debtId, amountMinor: r.amountMinor, date: r.date, txnId: idOf(r.txnId), note: str(r.note, 500), updatedAt: stamp(r.updatedAt) } : null),
+  sharedIn: (r) => (idOf(r.id) && idOf(r.personId) && int(r.amountMinor) > 0 && isoOr(r.date) ? { id: r.id, personId: r.personId, date: r.date, amountMinor: r.amountMinor, name: str(r.name, 80), categoryName: str(r.categoryName, 60), updatedAt: stamp(r.updatedAt) } : null),
   budgets: (r) => (idOf(r.id) && int(r.limitMinor) > 0 ? { id: r.id, categoryId: typeof r.categoryId === 'string' ? r.categoryId : '', limitMinor: r.limitMinor, updatedAt: stamp(r.updatedAt) } : null),
 };
 
@@ -1311,6 +1356,19 @@ function cleanWorkPay(w) {
   const off = [...new Set((Array.isArray(w.off) ? w.off : []).filter((x) => isIso(x)))].sort().slice(0, 400);
   const extra = [...new Set((Array.isArray(w.extra) ? w.extra : []).filter((x) => isIso(x)))].sort().slice(0, 800);
   return { dailyMinor: w.dailyMinor, weekdays: weekdays.length || extra.length ? weekdays : [1, 2, 3, 4, 5], off, extra };
+}
+function cleanHousehold(h) {
+  if (!h || typeof h !== 'object' || !idOf(h.personId) || !idOf(h.partnerId) || h.personId === h.partnerId) return null;
+  const c = h.config && typeof h.config === 'object' ? h.config : {};
+  const ids = [h.personId, h.partnerId];
+  const names = {}, incomes = {}, pctById = {};
+  for (const id of ids) {
+    names[id] = str(c.names?.[id], 40) || (id === h.personId ? 'Me' : 'Partner');
+    const inc = c.incomes?.[id]; incomes[id] = Number.isSafeInteger(inc) && inc > 0 ? inc : 0;
+    const p = c.split?.pctById?.[id]; pctById[id] = Number.isFinite(p) && p >= 0 && p <= 100 ? p : 50;
+  }
+  return { personId: h.personId, partnerId: h.partnerId, partnerLinked: h.partnerLinked !== false, lastImportAt: typeof h.lastImportAt === 'string' ? h.lastImportAt : null, lastExportAt: typeof h.lastExportAt === 'string' ? h.lastExportAt : null,
+    config: { names, incomes, split: { mode: oneOf(c.split?.mode, ['half', 'income', 'custom'], 'half'), pctById }, budgetMinor: Number.isSafeInteger(c.budgetMinor) && c.budgetMinor > 0 ? c.budgetMinor : 0, configAt: stamp(c.configAt) } };
 }
 function cleanPlan(p) {
   if (!p || typeof p !== 'object') return null;
@@ -1335,7 +1393,7 @@ function cleanSettings(s = {}) {
     theme: oneOf(s.theme, ['system', 'light', 'dark'], 'system'),
     sound: s.sound !== false, nudges: s.nudges !== false, guard: s.guard !== false, demo: s.demo === true, pay: s.pay && typeof s.pay.ruleId === 'string' ? { ruleId: s.pay.ruleId } : null,
     plan: cleanPlan(s.plan),
-    workPay: cleanWorkPay(s.workPay), wantsLimit: [20, 30, 40, 50].includes(s.wantsLimit) ? s.wantsLimit : 30, orientation: oneOf(s.orientation, ['auto', 'portrait'], 'auto'),
+    workPay: cleanWorkPay(s.workPay), household: cleanHousehold(s.household), wantsLimit: [20, 30, 40, 50].includes(s.wantsLimit) ? s.wantsLimit : 30, orientation: oneOf(s.orientation, ['auto', 'portrait'], 'auto'),
     onboarded: true, lastExportAt: typeof s.lastExportAt === 'string' ? s.lastExportAt : null,
     createdAt: stamp(s.createdAt),
   };
@@ -1449,6 +1507,7 @@ __exports.DEFAULT_CATEGORIES = DEFAULT_CATEGORIES;
 __exports.emptyData = emptyData;
 __exports.Store = Store;
 __exports.buildExport = buildExport;
+__exports.cleanHousehold = cleanHousehold;
 __exports.validateImport = validateImport;
 __exports.repairReferences = repairReferences;
 __exports.mergeData = mergeData;
@@ -2179,6 +2238,13 @@ const idOrNull = (v) => (v ? String(v) : null);
 const buttons = ({ del = '', saveLabel = 'Save' } = {}) => html`<div class="btn-row">${del}<span class="grow"></span><button type="button" class="btn ghost" data-act="sheet-close">Cancel</button><button class="btn primary" type="submit">${saveLabel}</button></div>`;
 const delBtn = (act, id, label = 'Delete') => html`<button type="button" class="btn danger-ghost" data-act="${act}" data-id="${id}">${icon('trash', 16)} ${label}</button>`;
 
+/** 'Shared with partner' tick, only once a household is set up. In the new-item forms it shows for expenses only. */
+function sharedBox(checked, byKind = true) {
+  if (!st().settings.household) return '';
+  const w = html`<label class="check inline"><input type="checkbox" name="shared" ${checked ? 'checked' : ''}><span><b>Shared with ${st().settings.household.config.names[st().settings.household.partnerId]}</b><small>Counts in your shared household budget and bill split.</small></span></label>`;
+  return byKind ? html`<div data-for="expense">${w}</div>` : w;
+}
+
 // ---------- transactions ----------
 function openTxnEditor({ id, type = 'expense', date, accountId } = {}) {
   const s = st();
@@ -2210,6 +2276,7 @@ function openTxnEditor({ id, type = 'expense', date, accountId } = {}) {
       ${recents.length ? html`<div class="recents" role="group" aria-label="Add again with one tap"><span class="eyebrow">Same as before? Tap to add again today</span><div class="chips">${recents.map((x) => html`<button type="button" class="pill recent" data-act="txn-repeat" data-id="${x.id}"><b>${x.name}</b> ${x.type === 'income' ? '+' : ''}${money(x.amountMinor)}</button>`)}</div></div>` : ''}
       ${segmented('type', [['expense', 'Expense'], ['income', 'Income'], ['transfer', 'Transfer']], ty)}
       ${amountField('amount', t?.amountMinor)}
+      ${sharedBox(t?.shared)}
       ${textField('name', 'Description', t?.name || '', { ph: 'What was it for?', attrs: 'data-input="autocat"' })}
       <div data-for="expense">${field('Category', html`<select id="f-catx" name="categoryExpense" data-input="catmanual" ${raw(t?.categoryId ? 'data-touched="1"' : '')}>${categoryOptions('expense', t?.categoryId || lastOf('expense'))}</select>`, '', 'f-catx')}</div>
       <div data-for="income">${field('Category', html`<select id="f-cati" name="categoryIncome" data-input="catmanual" ${raw(t?.categoryId ? 'data-touched="1"' : '')}>${categoryOptions('income', t?.categoryId || lastOf('income'))}</select>`, '', 'f-cati')}</div>
@@ -2230,7 +2297,7 @@ forms.txn = (fd, form) => {
   if (!isIso(date)) { showError(form, 'date', 'Choose a date.'); return false; }
   const accountId = fd.get('accountId');
   if (!accountId) { showError(form, 'accountId', 'Choose an account.'); return false; }
-  const rec = { type, amountMinor, name: String(fd.get('name') || '').trim(), accountId, date, notes: String(fd.get('notes') || '').trim() };
+  const rec = { type, amountMinor, name: String(fd.get('name') || '').trim(), accountId, date, notes: String(fd.get('notes') || '').trim(), shared: type === 'expense' && !!fd.get('shared') };
   if (type === 'transfer') {
     const to = fd.get('toAccountId');
     if (!to) { showError(form, 'toAccountId', 'Choose where the money goes.'); return false; }
@@ -2274,6 +2341,7 @@ function openPlannedEditor({ id, kind = 'expense', date } = {}) {
       ${rule ? html`<p class="note">${icon('repeat', 16)} Part of a series (${describeRecurrence(rule.unit, rule.every)}). Changes here affect <b>this date only</b>. <button type="button" class="link" data-act="edit-series" data-id="${rule.id}">Edit the whole series</button></p>` : ''}
       ${textField('name', 'Name', p?.name || '', { required: true, ph: k === 'event' ? 'Dentist, birthday…' : 'Rent, salary, subscription…', attrs: 'data-input="autocat"' })}
       <div data-for="expense income">${amountField('amount', p?.amountMinor)}</div>
+      ${sharedBox(p?.shared)}
       ${!p ? html`<label class="check inline multi-toggle"><input type="checkbox" name="multi" data-change="md-mode"><span><b>Pick several specific days</b><small>For pay by the day, or anything on a few chosen dates. Choose the days and set the amount for each.</small></span></label>
         <div class="multi-box" hidden></div>` : ''}
       <div data-hide-multi>${dateField('date', 'Date', p?.date || date || today())}</div>
@@ -2304,7 +2372,7 @@ forms.planned = (fd, form) => {
   const rec = {
     kind, name, amountMinor, date, time: fd.get('time') || '', notes: String(fd.get('notes') || '').trim(),
     categoryId: kind === 'event' ? null : idOrNull(fd.get(kind === 'income' ? 'categoryIncome' : 'categoryExpense')),
-    accountId: kind === 'event' ? null : idOrNull(fd.get('accountId')),
+    accountId: kind === 'event' ? null : idOrNull(fd.get('accountId')), shared: kind === 'expense' && !!fd.get('shared'),
   };
   const id = fd.get('id');
   if (id) { s.updatePlanned(id, rec); toast('Saved'); return true; }
@@ -2313,7 +2381,7 @@ forms.planned = (fd, form) => {
     const every = Math.max(1, Math.min(99, parseInt(fd.get('every'), 10) || 1));
     const endDate = fd.get('endDate') || null;
     if (endDate && (!isIso(endDate) || endDate < date)) { showError(form, 'endDate', 'The end date must be on or after the start date.'); return false; }
-    s.addRule({ kind, name, amountMinor, categoryId: rec.categoryId, accountId: rec.accountId, time: rec.time, notes: rec.notes, startDate: date, unit, every, endDate });
+    s.addRule({ kind, name, amountMinor, categoryId: rec.categoryId, accountId: rec.accountId, time: rec.time, notes: rec.notes, shared: rec.shared, startDate: date, unit, every, endDate });
     toast('Recurring item added');
   } else { s.addPlanned(rec); toast('Added'); }
   return true;
@@ -2419,6 +2487,7 @@ function openRuleEditor(id) {
       <p class="note">Updates every upcoming date that you haven’t edited yourself. Dates you changed or skipped are kept as they are.</p>
       ${textField('name', 'Name', r.name, { required: true })}
       ${r.kind !== 'event' ? amountField('amount', r.amountMinor) : ''}
+      ${r.kind === 'expense' ? sharedBox(r.shared, false) : ''}
       ${r.kind !== 'event' ? field('Category', html`<select id="f-cat" name="categoryId">${categoryOptions(r.kind, r.categoryId)}</select>`, '', 'f-cat') : ''}
       ${r.kind !== 'event' ? field('Account', html`<select id="f-account" name="accountId">${accountOptions(r.accountId, { empty: 'Choose when paying' })}</select>`, '', 'f-account') : ''}
       ${dateField('startDate', 'First date', r.startDate)}
@@ -2441,7 +2510,7 @@ forms.rule = (fd, form) => {
   if (endDate && (!isIso(endDate) || endDate < startDate)) { showError(form, 'endDate', 'The end date must be on or after the first date.'); return false; }
   s.updateRule(r.id, {
     name, amountMinor, startDate, endDate, unit: fd.get('unit'), every: Math.max(1, Math.min(99, parseInt(fd.get('every'), 10) || 1)),
-    categoryId: idOrNull(fd.get('categoryId')), accountId: idOrNull(fd.get('accountId')), notes: String(fd.get('notes') || '').trim(),
+    categoryId: idOrNull(fd.get('categoryId')), accountId: idOrNull(fd.get('accountId')), notes: String(fd.get('notes') || '').trim(), shared: r.kind === 'expense' && !!fd.get('shared'),
   });
   toast('Series updated');
   return true;
@@ -2842,7 +2911,7 @@ function txnRow(t, { showDate = false } = {}) {
   const sub = t.type === 'transfer' ? `${acc?.name || '?'} → ${to?.name || '?'}` : [cat?.name, acc?.name].filter(Boolean).join(' · ');
   const ico = t.type === 'transfer' ? 'transfer' : cat?.icon || (t.type === 'income' ? 'cash' : 'tag');
   return html`<div class="row"><button class="row-main" data-act="txn-open" data-id="${t.id}">
-    ${badge(ico)}<span class="row-text"><b>${title}</b><small>${showDate ? dateText(t.date) + (sub ? ' · ' : '') : ''}${sub}</small></span>
+    ${badge(ico)}<span class="row-text"><b>${title}</b><small>${showDate ? dateText(t.date) + (sub ? ' · ' : '') : ''}${sub}${t.shared ? html` ${chip('Shared', 'accent')}` : ''}</small></span>
     <span class="row-amt">${amountSpan(t.amountMinor, t.type)}</span></button></div>`;
 }
 
@@ -2869,6 +2938,114 @@ function plannedRow(p, { showDate = true, quick = true } = {}) {
 __exports.txnRow = txnRow;
 __exports.plannedRow = plannedRow;
 });
+__def("household.js", function (__exports) {
+// Two people, two phones, one shared budget. No server: each person sends the other a small file of the
+// expenses they marked "shared"; importing it replaces what was last received from that person.
+const { addDays } = __req("dates.js");
+const { cleanHousehold, uid } = __req("store.js");
+
+/** My share of the shared spending, in percent (0-100). */
+function sharePct(config, id, otherId) {
+  const mode = config.split.mode;
+  if (mode === 'custom') return config.split.pctById[id] ?? 50;
+  if (mode === 'income') {
+    const a = config.incomes[id] || 0, b = config.incomes[otherId] || 0;
+    return a > 0 && b > 0 ? (a * 100) / (a + b) : 50;
+  }
+  return 50;
+}
+
+/**
+ * The household's month: what was spent together, who paid what, who owes whom.
+ * mine/theirs: [{date, amountMinor, name, categoryName, ...}] already limited to shared expenses.
+ * balance > 0 means the partner owes me, < 0 means I owe the partner.
+ */
+function ledger({ household, mine, theirs, start, endExclusive }) {
+  const inRange = (x) => x.date >= start && x.date < endExclusive;
+  const m = mine.filter(inRange), t = theirs.filter(inRange);
+  const paidMe = m.reduce((n, x) => n + x.amountMinor, 0), paidThem = t.reduce((n, x) => n + x.amountMinor, 0);
+  const total = paidMe + paidThem;
+  const pct = sharePct(household.config, household.personId, household.partnerId);
+  const shareMe = Math.round((total * pct) / 100), shareThem = total - shareMe;
+  const byCat = new Map();
+  for (const x of [...m, ...t]) byCat.set(x.categoryName || 'Other', (byCat.get(x.categoryName || 'Other') || 0) + x.amountMinor);
+  return { total, paidMe, paidThem, pct, shareMe, shareThem, balance: paidMe - shareMe, byCategory: [...byCat].map(([name, amount]) => ({ name, amount })).sort((a, b) => b.amount - a.amount), count: m.length + t.length };
+}
+
+// ---------- the file that goes between phones ----------
+function buildShareFile(data, { now = new Date().toISOString(), today }) {
+  const h = data.settings.household;
+  const cats = new Map(data.categories.map((c) => [c.id, c.name]));
+  const since = addDays(today, -400);
+  const txns = data.txns.filter((t) => t.shared && t.type === 'expense' && t.date >= since).map((t) => ({ id: t.id, date: t.date, amountMinor: t.amountMinor, name: t.name || '', category: cats.get(t.categoryId) || '' }));
+  return { app: 'sallo', kind: 'household', v: 1, exportedAt: now, from: { id: h.personId, name: h.config.names[h.personId] }, config: h.config, txns };
+}
+
+/** Checks a received file. Throws an Error with a message a person can act on. */
+function validateShare(obj) {
+  if (!obj || typeof obj !== 'object' || obj.app !== 'sallo') throw new Error('This file is not from Sallo.');
+  if (obj.kind !== 'household') throw new Error('This is a normal Sallo backup, not a shared-budget file. Use "Import a backup" in Settings for that.');
+  if (obj.v !== 1) throw new Error('This shared file is from a newer version of Sallo. Update the app first.');
+  const id = obj.from?.id;
+  if (typeof id !== 'string' || !id || id.length > 80) throw new Error('This shared file is damaged.');
+  const raw = Array.isArray(obj.txns) ? obj.txns.slice(0, 5000) : [];
+  const seen = new Set(), txns = [];
+  for (const t of raw) {
+    if (!t || typeof t.id !== 'string' || !t.id || t.id.length > 80 || seen.has(t.id)) continue;
+    if (!Number.isSafeInteger(t.amountMinor) || t.amountMinor <= 0 || typeof t.date !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(t.date)) continue;
+    seen.add(t.id);
+    txns.push({ id: t.id, personId: id, date: t.date, amountMinor: t.amountMinor, name: String(t.name || '').slice(0, 80), categoryName: String(t.category || '').slice(0, 60) });
+  }
+  return { fromId: id, fromName: String(obj.from?.name || '').slice(0, 40) || 'Partner', config: obj.config, exportedAt: typeof obj.exportedAt === 'string' ? obj.exportedAt : null, txns };
+}
+
+/**
+ * Applies a validated file to the data. Returns {ok:true, created, count} or {ok:false, needsConfirm:'other-partner'}.
+ * Everything previously received from this person is replaced, so deleted or edited items stay correct.
+ * The newer shared settings (names, split, budget) win.
+ */
+function applyShare(data, v, { force = false, now = new Date().toISOString() } = {}) {
+  let h = data.settings.household;
+  let created = false;
+  if (h && !h.partnerLinked) { // first file from the partner: swap the placeholder id for their real one
+    const old = h.partnerId, rekey = (o) => { if (o && old in o) { o[v.fromId] = o[old]; delete o[old]; } };
+    rekey(h.config.names); rekey(h.config.incomes); rekey(h.config.split.pctById);
+    h.partnerId = v.fromId; h.partnerLinked = true;
+  }
+  if (h && h.partnerId !== v.fromId) {
+    if (!force) return { ok: false, needsConfirm: 'other-partner' };
+    data.sharedIn = []; h = null;
+  }
+  if (!h) {
+    const cfg = v.config && typeof v.config === 'object' ? v.config : {};
+    const me = uid();
+    const names = { ...(cfg.names || {}) }; names[me] = names[me] || 'Me'; names[v.fromId] = names[v.fromId] || v.fromName;
+    const split = cfg.split && typeof cfg.split === 'object' ? { ...cfg.split, pctById: { ...(cfg.split.pctById || {}) } } : { mode: 'half', pctById: {} };
+    if (split.mode === 'custom') { const theirs = split.pctById[v.fromId]; if (Number.isFinite(theirs)) split.pctById[me] = 100 - theirs; else split.mode = 'half'; }
+    data.settings.household = h = cleanHousehold({ personId: me, partnerId: v.fromId, config: { names, incomes: cfg.incomes || {}, split, budgetMinor: cfg.budgetMinor, configAt: cfg.configAt } });
+    created = true;
+  } else if (v.config && typeof v.config === 'object') {
+    const theirs = cleanHousehold({ personId: v.fromId, partnerId: h.personId, config: v.config })?.config;
+    if (theirs && theirs.configAt > h.config.configAt) {
+      const mePct = theirs.split.pctById[v.fromId];
+      const merged = { ...theirs, names: { ...theirs.names, [h.personId]: h.config.names[h.personId] }, incomes: { ...theirs.incomes } };
+      if (merged.split.mode === 'custom' && Number.isFinite(mePct)) merged.split = { mode: 'custom', pctById: { [v.fromId]: mePct, [h.personId]: 100 - mePct } };
+      h.config = merged;
+    }
+  }
+  data.sharedIn = data.sharedIn.filter((x) => x.personId !== v.fromId);
+  const stamp = now;
+  for (const t of v.txns) data.sharedIn.push({ ...t, updatedAt: stamp });
+  h.lastImportAt = now;
+  return { ok: true, created, count: v.txns.length };
+}
+
+__exports.sharePct = sharePct;
+__exports.ledger = ledger;
+__exports.buildShareFile = buildShareFile;
+__exports.validateShare = validateShare;
+__exports.applyShare = applyShare;
+});
 __def("ui/overview.js", function (__exports) {
 const { app } = __req("ui/ctx.js");
 const { html, raw, icon, money, dateText, pageHeader, progress, chip, actions, badge, emptyState } = __req("ui/kit.js");
@@ -2877,6 +3054,7 @@ const { today, periodFor, shiftPeriod, addDays, monthName, dayDiff, formatDate }
 const { plannedRow } = __req("ui/rows.js");
 const { guardFor, guardLines, guardHeadline, skipRuleId } = __req("ui/guard.js");
 const { planCard } = __req("ui/plan.js");
+const { ledger } = __req("household.js");
 const { ACCOUNT_ICON } = __req("ui/editors.js");
 
 // distinct, calm colours that stay readable on both light and dark cards
@@ -2957,7 +3135,7 @@ function overview() {
       <div class="hero-amt" data-test="safe">${safe.safe < 0 ? '−' + money(-safe.safe) : money(safe.safe)}</div>
       ${safe.safe < 0 ? html`<p class="muted">You’re short for what’s coming up. Hold off on non-essentials if you can.</p>`
         : html`<p class="muted">About <b>${money(safe.perDay)}</b> a day · <b>${money(safe.perWeek)}</b> a week</p>`}
-      <a class="link" href="#/timeline">See your money timeline</a>
+      <a class="link" href="#/timeline">See your money timeline</a> <span class="muted">·</span> <a class="link" href="#/afford">Can I afford something?</a>
       ${!safe.byIncome ? html`<a class="btn small" href="#/settings/pay">${icon('cash', 16)} Add your pay and payday for a sharper number</a>` : ''}
       <p class="muted small-p">${safe.work ? html`Counts your daily pay and every bill in the next 30 days.` : html`${money(safe.balance)} balance${safe.bills ? ` − ${money(safe.bills)} bills due` : ''}`}${safe.allocated ? ` − ${money(safe.allocated)} set aside` : ''}${safe.byIncome ? html` · <a class="link" href="#/settings/pay">Pay settings</a>` : ''}</p></section>` : ''}
     ${gLines.length ? html`<section class="card guard ${gLines.some((l) => l.level === 'high') ? 'high' : ''}" aria-label="Spending check" role="status">
@@ -2999,6 +3177,14 @@ function overview() {
 
     <section class="card" aria-label="Coming up"><div class="card-head"><h2>Coming up</h2><a class="link" href="#/upcoming">See all</a></div>
       ${next.length ? html`<div class="list">${next.map((x) => plannedRow(x))}</div>` : html`<p class="muted">Nothing planned. Add bills, income or events in Upcoming.</p>`}</section>
+
+    ${(() => { const h = set.household; if (!h) return '';
+      const l = ledger({ household: h, mine: d.txns.filter((x) => x.shared && x.type === 'expense'), theirs: d.sharedIn, start: p.start, endExclusive: p.endExclusive });
+      const her = h.config.names[h.partnerId], bud = h.config.budgetMinor;
+      return html`<section class="card" aria-label="Couples"><div class="card-head"><h2>${icon('heart', 18)} With ${her}</h2><a class="link" href="#/household">Open</a></div>
+        <div class="trio"><div><span class="eyebrow">Spent together</span><b class="amt">${money(l.total)}</b></div><div><span class="eyebrow">${bud ? 'Shared budget' : 'Your share'}</span><b class="amt">${money(bud || l.shareMe)}</b></div></div>
+        ${bud ? progress(Math.min(100, Math.round((l.total * 100) / bud)), l.total > bud ? 'over' : 'sage', 'Shared budget used') : ''}
+        <p class="muted small-p">${!l.total || !l.balance ? 'You’re even for this period.' : l.balance > 0 ? `${her} owes you ${money(l.balance)}.` : `You owe ${her} ${money(-l.balance)}.`}</p></section>`; })()}
 
     ${(() => { const dt = C.debtTotals(d.debts, d.repayments, d.planned); return dt.owe || dt.owed ? html`<section class="card" aria-label="Debts and loans"><div class="card-head"><h2>${icon('bank', 18)} Debts and loans</h2><a class="link" href="#/debts">See all</a></div><div class="trio"><div><span class="eyebrow">You owe</span><b class="amt ${dt.owe ? 'out' : ''}">${money(dt.owe)}</b></div><div><span class="eyebrow">Owed to you</span><b class="amt ${dt.owed ? 'in' : ''}">${money(dt.owed)}</b></div></div></section>` : ''; })()}
 
@@ -3354,6 +3540,7 @@ changes['import-file'] = async (input) => {
 
 let pendingEnvelope = null;
 async function handleImportObject(obj) {
+  if (obj && obj.kind === 'household') { await app.importHousehold?.(obj); return; }
   if (V.isEncryptedBackup(obj)) {
     pendingEnvelope = obj;
     openSheet('Encrypted backup', html`<form data-form="importpass" novalidate>
@@ -3555,6 +3742,8 @@ function settings() {
     <div class="list card flush">
       ${link('#/settings/preferences', 'sliders', 'Preferences', `${set.currency} · week starts ${['', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'][set.weekStart]}`)}
       ${link('#/settings/pay', 'cash', 'Pay and income', monthlyPay() ? `${money(monthlyPay())} a month` : 'Add your salary or daily pay')}
+      ${link('#/afford', 'wallet', 'Can I afford this?', 'Try a purchase before you make it')}
+      ${link('#/household', 'heart', 'Couples', set.household ? `With ${set.household.config.names[set.household.partnerId]}` : 'Share a budget with a partner')}
       ${link('#/debts', 'bank', 'Debts and loans', debtSub())}
       ${link('#/settings/plan', 'target', 'Money plan', set.plan ? (set.plan.type === 'own' ? 'My own way' : set.plan.type === 'custom' ? `${set.plan.needs}/${set.plan.wants}/${set.plan.save}` : set.plan.type.replace(/-/g, '/')) : 'Choose how you want to live')}
       ${link('#/settings/accounts', 'bank', 'Accounts', `${s.activeAccounts().length} active`)}
@@ -4498,6 +4687,242 @@ __exports.debtDetail = debtDetail;
 __exports.checkSettled = checkSettled;
 __exports.openDebtEditor = openDebtEditor;
 });
+__def("ui/household.js", function (__exports) {
+// Couples: a shared household budget across two phones, with no server.
+const { app } = __req("ui/ctx.js");
+const { html, icon, money, dateText, pageHeader, actions, forms, changes, emptyState, progress, chip, badge, field, segmented, openSheet, closeSheet, confirmSheet, toast, showError, $ } = __req("ui/kit.js");
+const { amountField, textField, readAmount, buttons } = __req("ui/editors.js");
+const { periodNav, periodLabel } = __req("ui/overview.js");
+const { ledger, buildShareFile, validateShare, applyShare, sharePct } = __req("household.js");
+const { cleanHousehold, uid } = __req("store.js");
+const { saveFile, canShareFiles } = __req("ui/dataio.js");
+const { monthlyPay } = __req("ui/guard.js");
+const { today, periodFor, shiftPeriod, dayDiff } = __req("dates.js");
+const { minorToPlain, parseMinor, currencyInfo } = __req("money.js");
+
+const st = () => app.store;
+const hhOf = () => st().settings.household;
+const nameOf = (h, id) => h.config.names[id];
+const cur = () => currencyInfo(st().settings.currency);
+
+/** What the Overview card needs, without any screen code. */
+function householdSummary() {
+  const s = st(), h = hhOf();
+  if (!h) return null;
+  const p = periodFor(today(), s.settings.monthStart);
+  const mine = s.data.txns.filter((t) => t.shared && t.type === 'expense');
+  const l = ledger({ household: h, mine, theirs: s.data.sharedIn, start: p.start, endExclusive: p.endExclusive });
+  return { h, l, budget: h.config.budgetMinor };
+}
+const owesText = (h, l) => (l.balance === 0 || l.total === 0 ? 'You’re even' : l.balance > 0 ? `${nameOf(h, h.partnerId)} owes you ${money(l.balance)}` : `You owe ${nameOf(h, h.partnerId)} ${money(-l.balance)}`);
+
+
+function household() {
+  const s = st(), h = hhOf();
+  const head = pageHeader('Couples', { back: true, right: h ? html`<button class="icon-btn" data-act="hh-edit" aria-label="Names, split and budget">${icon('sliders')}</button>` : '' });
+  if (!h) return {
+    html: html`${head}
+    <section class="card hero"><span class="trophy-badge">${icon('heart', 30)}</span><h2>A budget for two</h2>
+      <p class="muted">Each of you keeps your own Sallo on your own phone, with your own private accounts. You mark some expenses as <b>shared</b>, send each other a small file now and then, and Sallo shows the household total, who paid what, and who owes whom.</p>
+      <p class="muted">Nothing goes through a server. Only expenses you tick as shared are in the file.</p>
+      <button class="btn primary block" data-act="hh-setup">Set it up</button>
+      <p class="hint">Already got a file from your partner? <button class="link" data-act="hh-import-pick">Import it</button> and Sallo sets this up for you.</p>
+      <input type="file" id="hh-file" data-change="hh-file" accept=".json,.sallo,application/json,text/plain" hidden></section>`,
+  };
+  const t = today();
+  app.ui.hhShift ||= 0;
+  const p = shiftPeriod(periodFor(t, s.settings.monthStart), app.ui.hhShift);
+  const mineAll = s.data.txns.filter((x) => x.shared && x.type === 'expense');
+  const l = ledger({ household: h, mine: mineAll, theirs: s.data.sharedIn, start: p.start, endExclusive: p.endExclusive });
+  const me = nameOf(h, h.personId), her = nameOf(h, h.partnerId);
+  const budget = h.config.budgetMinor, pct = budget ? Math.min(100, Math.round((l.total * 100) / budget)) : 0;
+  const list = [
+    ...mineAll.filter((x) => x.date >= p.start && x.date < p.endExclusive).map((x) => ({ date: x.date, name: x.name || s.category(x.categoryId)?.name || 'Expense', cat: s.category(x.categoryId)?.name || '', amt: x.amountMinor, by: me, mine: true, id: x.id })),
+    ...s.data.sharedIn.filter((x) => x.date >= p.start && x.date < p.endExclusive).map((x) => ({ date: x.date, name: x.name || x.categoryName || 'Expense', cat: x.categoryName, amt: x.amountMinor, by: her, mine: false, id: x.id })),
+  ].sort((a, b) => b.date.localeCompare(a.date));
+  const age = h.lastImportAt ? dayDiff(t, h.lastImportAt.slice(0, 10)) : null;
+  const maxCat = l.byCategory[0]?.amount || 1;
+  return {
+    html: html`${head}
+    <section class="card">${periodNav(p, periodLabel(p, s.settings.monthStart, s.settings.locale), 'hh-prev', 'hh-next', app.ui.hhShift === 0, 'hh-now')}
+      <p class="eyebrow">Spent together</p><div class="hero-amt">${money(l.total)}</div>
+      ${budget ? html`${progress(pct, l.total > budget ? 'over' : pct >= 85 ? 'near' : 'sage', 'Shared budget used')}<p class="muted">${l.total > budget ? html`Over the shared budget by <b>${money(l.total - budget)}</b>` : html`<b>${money(budget - l.total)}</b> left of the ${money(budget)} shared budget`}</p>`
+        : html`<p class="muted">No shared budget set. <button class="link" data-act="hh-edit">Add one</button></p>`}</section>
+    <section class="card"><h2>Who paid, who owes</h2>
+      <div class="trio"><div><span class="eyebrow">${me} paid</span><b class="amt">${money(l.paidMe)}</b></div><div><span class="eyebrow">${her} paid</span><b class="amt">${money(l.paidThem)}</b></div>
+        <div><span class="eyebrow">Split</span><b>${Math.round(l.pct)} / ${100 - Math.round(l.pct)}</b></div></div>
+      <p class="owes ${l.balance === 0 || !l.total ? '' : l.balance > 0 ? 'in' : 'out'}">${icon(l.balance === 0 || !l.total ? 'check' : 'transfer', 18)} <b>${owesText(h, l)}</b></p>
+      <p class="hint">${me}’s fair share is ${money(l.shareMe)} and ${her}’s is ${money(l.shareThem)}, ${h.config.split.mode === 'income' ? 'split by income' : h.config.split.mode === 'custom' ? 'split your own way' : 'split evenly'}. This is for the month shown. Settle up however you like, it doesn’t move any money here.</p></section>
+    ${l.byCategory.length ? html`<section class="card"><h2>What it went on</h2><ul class="plain bars">${l.byCategory.slice(0, 6).map((c) => html`<li><div class="bar-label"><span>${c.name}</span><b>${money(c.amount)}</b></div><div class="bar"><i style="width:${Math.max(3, Math.round((c.amount / maxCat) * 100))}%"></i></div></li>`)}</ul></section>` : ''}
+    <h2 class="sec">Shared expenses</h2>
+    ${list.length ? html`<div class="list card flush">${list.map((x) => html`<div class="row"><button class="row-main" ${x.mine ? html`data-act="txn-open" data-id="${x.id}"` : ''}>${badge(x.mine ? 'wallet' : 'heart')}<span class="row-text"><b>${x.name}</b><small>${dateText(x.date, { day: 'numeric', month: 'short' })}${x.cat ? ' · ' + x.cat : ''} ${chip(x.by + ' paid', x.mine ? 'accent' : '')}</small></span><span class="row-amt"><span class="amt out">${money(x.amt)}</span></span></button></div>`)}</div>`
+      : emptyState('Nothing shared this month', 'When you add an expense, tick “Shared with ' + her + '”. Your partner’s shared expenses appear after you import their file.')}
+    <section class="card"><h2>Keep in step</h2>
+      <p class="muted">Send ${her} your shared expenses, and import theirs. Do it whenever you want fresh numbers, for example once a week.</p>
+      <div class="stack"><button class="btn primary" data-act="hh-send">${icon('upload', 18)} Send my shared expenses</button>
+        <button class="btn" data-act="hh-import-pick">${icon('download', 18)} Import ${her}’s file</button></div>
+      <input type="file" id="hh-file" data-change="hh-file" accept=".json,.sallo,application/json,text/plain" hidden>
+      <p class="hint">${h.lastImportAt ? `${her}’s file was imported ${age === 0 ? 'today' : age === 1 ? 'yesterday' : age + ' days ago'}${age > 14 ? '. It’s getting old, ask for a fresh one.' : '.'}` : `You haven’t imported anything from ${her} yet.`}${h.lastExportAt ? ` You last sent yours ${dateText(h.lastExportAt.slice(0, 10), { day: 'numeric', month: 'short' })}.` : ''}</p>
+      <p class="hint">The file contains only the expenses you ticked as shared, plus names, your split and the shared budget. Anyone who gets the file can read those, so send it only to ${her}.</p></section>`,
+  };
+}
+actions['hh-prev'] = () => { app.ui.hhShift = (app.ui.hhShift || 0) - 1; };
+actions['hh-next'] = () => { app.ui.hhShift = (app.ui.hhShift || 0) + 1; };
+actions['hh-now'] = () => { app.ui.hhShift = 0; };
+
+// ---------- set up / edit ----------
+function editor(h) {
+  const me = h ? nameOf(h, h.personId) : '', her = h ? nameOf(h, h.partnerId) : '';
+  const c = h?.config;
+  const mode = c?.split.mode || 'half';
+  const myInc = c?.incomes[h.personId] || monthlyPay() || null, herInc = c?.incomes[h?.partnerId] || null;
+  return html`<form data-form="household" novalidate>
+    ${textField('me', 'Your name', me === 'Me' ? '' : me, { required: true, ph: 'Marten', max: 30 })}
+    ${textField('her', 'Your partner’s name', her === 'Partner' ? '' : her, { required: true, ph: 'Anna', max: 30 })}
+    <fieldset class="seg-field"><legend>How do you split shared costs?</legend>${segmented('mode', [['half', 'Half each'], ['income', 'By income'], ['custom', 'My own split']], mode)}</fieldset>
+    ${amountField('myInc', myInc, 'Your monthly income', { hint: 'Used when splitting by income. Your partner sees it in the file.' })}
+    ${amountField('herInc', herInc, 'Your partner’s monthly income', { hint: 'Ask them. Only used when splitting by income.' })}
+    ${field('Your share for “my own split” (%)', html`<input id="f-pct" name="pct" type="number" min="0" max="100" inputmode="numeric" value="${Math.round(c?.split.pctById[h.personId] ?? 50)}">`, 'Your partner pays the rest.', 'f-pct')}
+    ${amountField('budget', c?.budgetMinor || null, 'Shared monthly budget (optional)', { hint: 'What you two want to spend together in a month.' })}
+    ${buttons({ saveLabel: h ? 'Save' : 'Start' })}</form>`;
+}
+actions['hh-setup'] = () => openSheet('Set up couples', editor(null));
+actions['hh-edit'] = () => openSheet('Couples settings', editor(hhOf()));
+forms.household = (fd, form) => {
+  const s = st(), exp = cur().exp;
+  const me = String(fd.get('me') || '').trim(), her = String(fd.get('her') || '').trim();
+  if (!me) { showError(form, 'me', 'Enter your name.'); return false; }
+  if (!her) { showError(form, 'her', 'Enter your partner’s name.'); return false; }
+  const num = (k) => { const raw = String(fd.get(k) || '').trim(); if (!raw) return 0; const v = parseMinor(raw, exp); return v === null || v < 0 ? undefined : v; };
+  const myInc = num('myInc'), herInc = num('herInc'), budget = num('budget');
+  if (myInc === undefined) { showError(form, 'myInc', 'Enter an amount like 1400.'); return false; }
+  if (herInc === undefined) { showError(form, 'herInc', 'Enter an amount like 1400.'); return false; }
+  if (budget === undefined) { showError(form, 'budget', 'Enter an amount like 800.'); return false; }
+  const mode = ['half', 'income', 'custom'].includes(fd.get('mode')) ? fd.get('mode') : 'half';
+  const pct = Number(fd.get('pct'));
+  if (mode === 'custom' && !(pct >= 0 && pct <= 100)) { showError(form, 'pct', 'Enter a percentage from 0 to 100.'); return false; }
+  if (mode === 'income' && !(myInc > 0 && herInc > 0)) { showError(form, 'herInc', 'Enter both incomes to split by income.'); return false; }
+  const old = hhOf();
+  const personId = old?.personId || uid(), partnerId = old?.partnerId || uid(); // a not-yet-linked partner gets an id that the first file replaces
+  const config = { names: { [personId]: me, [partnerId]: her }, incomes: { [personId]: myInc, [partnerId]: herInc }, split: { mode, pctById: { [personId]: pct || 50, [partnerId]: 100 - (pct || 50) } }, budgetMinor: budget, configAt: new Date().toISOString() };
+  s.setSettings({ household: cleanHousehold({ personId, partnerId, partnerLinked: old ? old.partnerLinked : false, lastImportAt: old?.lastImportAt || null, lastExportAt: old?.lastExportAt || null, config }) });
+  toast(old ? 'Saved' : 'Couples is on. Tick “Shared” on expenses you split.');
+  return true;
+};
+
+// ---------- send / receive ----------
+actions['hh-send'] = async () => {
+  const s = st(), h = hhOf(); if (!h) return;
+  const file = buildShareFile(s.data, { today: today() });
+  const her = nameOf(h, h.partnerId);
+  const res = await saveFile(`sallo-shared-${nameOf(h, h.personId).toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${today()}.json`, JSON.stringify(file), 'application/json', { share: canShareFiles() });
+  if (res === 'cancelled') return;
+  s.setSettings({ household: { ...h, lastExportAt: new Date().toISOString() } });
+  toast(res === 'shared' ? `Ready to send to ${her}` : `File saved. Send it to ${her}.`);
+};
+actions['hh-import-pick'] = () => { const i = $('#hh-file'); if (i) { i.value = ''; i.click(); } };
+changes['hh-file'] = async (input) => {
+  const f = input.files?.[0]; if (!f) return;
+  if (f.size > 5 * 1024 * 1024) { toast('That file is too large.'); return; }
+  let obj; try { obj = JSON.parse(await f.text()); } catch { toast('That doesn’t look like a Sallo shared file.'); return; }
+  await importShare(obj);
+};
+async function importShare(obj) {
+  let v;
+  try { v = validateShare(obj); } catch (e) { toast(e.message); return; }
+  const s = st();
+  let r = applyShare(s.data, v);
+  if (!r.ok) {
+    const ok = await confirmSheet({ title: 'A different partner?', message: `Your couples setup is linked to someone else. Importing this file from ${v.fromName} replaces the shared expenses you received before.`, confirmLabel: 'Replace', danger: true });
+    if (!ok) return;
+    r = applyShare(s.data, v, { force: true });
+  }
+  s.commit();
+  location.hash = '#/household';
+  toast(r.created ? `Linked with ${v.fromName}. Check your names and split.` : `Imported ${r.count} shared expense${r.count === 1 ? '' : 's'} from ${v.fromName}`);
+  if (r.created) setTimeout(() => actions['hh-edit']?.(), 400);
+}
+app.importHousehold = importShare;
+
+__exports.householdSummary = householdSummary;
+__exports.household = household;
+__exports.importShare = importShare;
+__exports.owesText = owesText;
+});
+__def("ui/afford.js", function (__exports) {
+// "Can I afford this?": try a purchase against your real balance, bills and income before you make it.
+const { app } = __req("ui/ctx.js");
+const { html, icon, money, dateText, pageHeader, actions, forms, field, toast, showError } = __req("ui/kit.js");
+const { amountField, textField, dateField, readAmount } = __req("ui/editors.js");
+const C = __req("calc.js");
+const { today, isIso } = __req("dates.js");
+const { skipRuleId } = __req("ui/guard.js");
+
+const dt = (iso) => dateText(iso, { weekday: 'short', day: 'numeric', month: 'short' });
+
+function afford() {
+  const s = app.store, d = s.data, t = today();
+  const a = app.ui.afford || null;
+  const r = a?.result || null;
+  const alloc = C.totalAllocated(d.goals, d.contribs);
+  const hasMoney = d.accounts.length > 0;
+  const verdict = !r ? '' : r.verdict === 'yes'
+    ? html`<section class="card tl-verdict good" role="status"><h2>${icon('check', 18)} Yes, you can afford it</h2>
+        <p>${a.date > t ? `On ${dt(a.date)}, your` : 'Your'} balance stays above zero for the next 45 days, and your goal savings (${money(alloc)}) are untouched. The lowest you’d be is <b>${money(r.lowestAfter)}</b>.</p></section>`
+    : r.verdict === 'tight'
+      ? html`<section class="card tl-verdict warn" role="status"><h2>${icon('info', 18)} Possible, but it would be tight</h2>
+        <p>You could pay for it, but the lowest you’d be is only <b>${money(r.lowestAfter)}</b>, less than a week of your essential bills (about ${money(r.cushion)}).${r.earliest ? html` Waiting until <b>${dt(r.earliest)}</b> would leave more room.` : ''}</p></section>`
+      : html`<section class="card tl-verdict bad" role="status"><h2>${icon('info', 18)} Not right now</h2>
+        <p>${r.firstShort ? html`${r.firstShort === a.date ? 'You’d be short straight away' : html`From <b>${dt(r.firstShort)}</b> you’d be short`}, by as much as <b>${money(r.shortBy)}</b> once your planned bills are paid.` : html`You’d be about <b>${money(r.shortBy)}</b> short.`}${alloc ? ` That counts your goal savings (${money(alloc)}) as off limits.` : ''}${r.earliest ? html` The first day it would work is <b>${dt(r.earliest)}</b>.` : ' Nothing in the next three months gets you there, so it may need more saving first.'}</p></section>`;
+  return {
+    html: html`${pageHeader('Can I afford this?', { back: true })}
+    <p class="muted pad">Type what you’re thinking of buying. Sallo checks it against your balance, your planned bills and your income over the next 45 days. It doesn’t save anything unless you choose to.</p>
+    ${hasMoney ? html`<form class="card" data-form="afford" novalidate>
+      ${textField('name', 'What is it?', a?.name || '', { ph: 'New phone, bed, holiday…', max: 60 })}
+      ${amountField('price', a?.priceMinor || null, 'Price')}
+      ${dateField('date', 'When would you buy it?', a?.date || t)}
+      <div class="btn-row"><span class="grow"></span><button class="btn primary" type="submit">Check</button></div></form>` : html`<p class="note">${icon('info', 16)}<span>Add an account first, so Sallo knows your balance.</span></p>`}
+    ${verdict}
+    ${r ? html`<section class="card"><h2>The numbers</h2><ul class="plain facts">
+      <li>Lowest balance in that time without it: <b>${money(r.lowestNow)}</b> (${dt(r.lowestNowDate)})</li>
+      <li>Lowest with it: <b>${money(r.lowestAfter)}</b></li>
+      ${alloc ? html`<li>Set aside for goals, kept out of reach: <b>${money(alloc)}</b></li>` : ''}</ul>
+      <p class="hint">An estimate from what you’ve planned. Unplanned spending and late payments aren’t included${s.settings.workPay ? '. Your work-day pay is counted' : ''}.</p>
+      <div class="stack">
+        <button class="btn" data-act="afford-goal">${icon('piggy', 18)} Save up for it as a goal</button>
+        ${r.verdict === 'yes' ? html`<button class="btn" data-act="afford-plan">${icon('calendar', 18)} Add it to Upcoming</button>` : ''}</div></section>` : ''}`,
+  };
+}
+forms.afford = (fd, form) => {
+  const s = app.store, d = s.data, t = today();
+  const priceMinor = readAmount(form, 'price');
+  if (priceMinor === undefined) return false;
+  const date = String(fd.get('date') || '');
+  if (!isIso(date) || date < t) { showError(form, 'date', date < t ? 'Choose today or a later day.' : 'Choose a date.'); return false; }
+  const alloc = C.totalAllocated(d.goals, d.contribs);
+  const cushion = Math.round(C.fixedEssentialsMonthly(d.rules, d.categories) / 4); // about a week of essential bills
+  const result = C.affordCheck({ ...d, workPay: s.settings.workPay, skipRuleId: skipRuleId() }, { price: priceMinor, date, today: t, allocated: alloc, cushion });
+  app.ui.afford = { name: String(fd.get('name') || '').trim(), priceMinor, date, result };
+  return true;
+};
+actions['afford-goal'] = () => {
+  const s = app.store, a = app.ui.afford; if (!a) return;
+  const deadline = a.result.earliest || (a.date > today() ? a.date : null);
+  s.add('goals', { name: a.name || 'Something new', targetMinor: a.priceMinor, deadline, autoPct: 0, icon: 'piggy', archived: false, note: '' });
+  s.commit();
+  toast('Goal created. Put money aside for it in Savings.');
+  location.hash = '#/savings';
+};
+actions['afford-plan'] = () => {
+  const s = app.store, a = app.ui.afford; if (!a) return;
+  s.addPlanned({ kind: 'expense', name: a.name || 'Purchase', amountMinor: a.priceMinor, date: a.date, categoryId: null, accountId: null });
+  toast('Added to Upcoming');
+  app.ui.afford = null;
+  location.hash = '#/upcoming';
+};
+
+__exports.afford = afford;
+});
 __def("ui/lock.js", function (__exports) {
 const { app } = __req("ui/ctx.js");
 const { html, icon, $, actions, forms, openSheet, closeSheet, confirmSheet, field } = __req("ui/kit.js");
@@ -4569,6 +4994,8 @@ const { timeline } = __req("ui/timeline.js");
 __req("ui/workpay.js");
 const { bankImport } = __req("ui/bankimport.js");
 const { debts, debtDetail, checkSettled } = __req("ui/debts.js");
+const { household } = __req("ui/household.js");
+const { afford } = __req("ui/afford.js");
 const { showLock } = __req("ui/lock.js");
 const { today } = __req("dates.js");
 const { play, setSoundEnabled } = __req("sound.js");
@@ -4582,7 +5009,7 @@ const ROUTES = [
   [/^\/settings$/, St.settings, 'overview'], [/^\/settings\/preferences$/, St.preferences, 'overview'],
   [/^\/settings\/pay$/, St.payScreen, 'overview'], [/^\/settings\/plan$/, planScreen, 'overview'], [/^\/timeline$/, timeline, 'overview'], [/^\/settings\/accounts$/, St.accountsScreen, 'overview'], [/^\/settings\/categories$/, St.categoriesScreen, 'overview'],
   [/^\/settings\/budgets$/, St.budgetsScreen, 'overview'], [/^\/settings\/security$/, St.security, 'overview'],
-  [/^\/settings\/data$/, St.dataScreen, 'overview'], [/^\/settings\/bank$/, bankImport, 'overview'], [/^\/debts$/, debts, 'savings'], [/^\/debt\/(.+)$/, (m) => debtDetail({ id: m[1] }), 'savings'], [/^\/settings\/about$/, St.about, 'overview'],
+  [/^\/settings\/data$/, St.dataScreen, 'overview'], [/^\/settings\/bank$/, bankImport, 'overview'], [/^\/household$/, household, 'overview'], [/^\/afford$/, afford, 'overview'], [/^\/debts$/, debts, 'savings'], [/^\/debt\/(.+)$/, (m) => debtDetail({ id: m[1] }), 'savings'], [/^\/settings\/about$/, St.about, 'overview'],
 ];
 const TITLES = { overview: 'Overview', activity: 'Activity', calendar: 'Calendar', upcoming: 'Upcoming', savings: 'Savings' };
 

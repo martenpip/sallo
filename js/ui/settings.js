@@ -26,6 +26,8 @@ export function settings() {
     <div class="list card flush">
       ${link('#/settings/preferences', 'sliders', 'Preferences', `${set.currency} · week starts ${['', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'][set.weekStart]}`)}
       ${link('#/settings/pay', 'cash', 'Pay and income', monthlyPay() ? `${money(monthlyPay())} a month` : 'Add your salary or daily pay')}
+      ${link('#/afford', 'wallet', 'Can I afford this?', 'Try a purchase before you make it')}
+      ${link('#/household', 'heart', 'Couples', set.household ? `With ${set.household.config.names[set.household.partnerId]}` : 'Share a budget with a partner')}
       ${link('#/debts', 'bank', 'Debts and loans', debtSub())}
       ${link('#/settings/plan', 'target', 'Money plan', set.plan ? (set.plan.type === 'own' ? 'My own way' : set.plan.type === 'custom' ? `${set.plan.needs}/${set.plan.wants}/${set.plan.save}` : set.plan.type.replace(/-/g, '/')) : 'Choose how you want to live')}
       ${link('#/settings/accounts', 'bank', 'Accounts', `${s.activeAccounts().length} active`)}

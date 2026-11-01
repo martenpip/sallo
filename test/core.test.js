@@ -249,3 +249,83 @@ test('debt totals split what you owe from what is owed to you', () => {
   const t = debtTotals([{ id: 'a', startMinor: 5000, direction: 'owe' }, { id: 'b', startMinor: 3000, direction: 'owed' }, { id: 'c', startMinor: 100, direction: 'owe' }], [{ debtId: 'c', amountMinor: 100 }]);
   assert.deepEqual(t, { owe: 5000, owed: 3000, nOwe: 1, nOwed: 1 });
 });
+
+import { ledger, sharePct, buildShareFile, validateShare, applyShare } from '../js/household.js';
+import { cleanHousehold } from '../js/store.js';
+const hh = (mode = 'half', extra = {}) => cleanHousehold({ personId: 'me', partnerId: 'her', config: { names: { me: 'Marten', her: 'Anna' }, incomes: { me: 1000, her: 3000 }, split: { mode, pctById: { me: 60, her: 40 } }, budgetMinor: 100000, configAt: '2026-11-01T00:00:00.000Z', ...extra } });
+test('split: half, by income, custom', () => {
+  assert.equal(sharePct(hh('half').config, 'me', 'her'), 50);
+  assert.equal(sharePct(hh('income').config, 'me', 'her'), 25);
+  assert.equal(sharePct(hh('custom').config, 'me', 'her'), 60);
+});
+test('ledger: who paid, who owes whom, month filter', () => {
+  const mine = [{ date: '2026-11-03', amountMinor: 60000, categoryName: 'Housing' }, { date: '2026-10-30', amountMinor: 999, categoryName: 'Other' }];
+  const theirs = [{ date: '2026-11-05', amountMinor: 20000, categoryName: 'Groceries' }];
+  const l = ledger({ household: hh('half'), mine, theirs, start: '2026-11-01', endExclusive: '2026-12-01' });
+  assert.equal(l.total, 80000); assert.equal(l.shareMe, 40000); assert.equal(l.balance, 20000); // partner owes me 200
+  assert.equal(l.byCategory[0].name, 'Housing'); assert.equal(l.count, 2);
+  const l2 = ledger({ household: hh('income'), mine, theirs, start: '2026-11-01', endExclusive: '2026-12-01' });
+  assert.equal(l2.shareMe, 20000); assert.equal(l2.balance, 40000);
+});
+test('share file round trip: only shared expenses go out; import replaces and adopts newer settings', () => {
+  const sender = { settings: { household: hh('half') }, categories: [{ id: 'c', name: 'Housing' }], txns: [
+    { id: 't1', type: 'expense', shared: true, date: '2026-11-03', amountMinor: 5000, name: 'Rent', categoryId: 'c' },
+    { id: 't2', type: 'expense', shared: false, date: '2026-11-03', amountMinor: 700, name: 'Private', categoryId: 'c' },
+    { id: 't3', type: 'income', shared: true, date: '2026-11-03', amountMinor: 900, name: 'Pay', categoryId: null }] };
+  const file = buildShareFile(sender, { today: '2026-11-10' });
+  assert.deepEqual(file.txns.map((t) => t.id), ['t1']);
+  const v = validateShare(JSON.parse(JSON.stringify(file)));
+  const receiver = { settings: { household: null }, sharedIn: [] };
+  const r = applyShare(receiver, v);
+  assert.equal(r.ok, true); assert.equal(r.created, true);
+  assert.equal(receiver.settings.household.partnerId, 'me');
+  assert.equal(receiver.settings.household.config.names.me, 'Marten');
+  assert.equal(receiver.sharedIn.length, 1);
+  // a second file replaces the first (deletions propagate)
+  file.txns = []; const v2 = validateShare(JSON.parse(JSON.stringify(file)));
+  applyShare(receiver, v2);
+  assert.equal(receiver.sharedIn.length, 0);
+  // a file from someone else needs confirmation
+  const other = validateShare({ app: 'sallo', kind: 'household', v: 1, from: { id: 'x', name: 'Bob' }, txns: [] });
+  assert.equal(applyShare(receiver, other).needsConfirm, 'other-partner');
+});
+test('share file validation rejects junk and backups', () => {
+  assert.throws(() => validateShare({ app: 'sallo', schema: 1 }), /normal Sallo backup/);
+  assert.throws(() => validateShare(null), /not from Sallo/);
+  const v = validateShare({ app: 'sallo', kind: 'household', v: 1, from: { id: 'a' }, txns: [{ id: 'x', date: '2026-01-01', amountMinor: -5 }, { id: 'y', date: 'bad', amountMinor: 5 }, { id: 'z', date: '2026-01-01', amountMinor: 5 }] });
+  assert.equal(v.txns.length, 1);
+});
+
+test('first file from a partner links a manually set up household without asking', () => {
+  const mine = cleanHousehold({ personId: 'me', partnerId: 'placeholder', partnerLinked: false, config: { names: { me: 'Marten', placeholder: 'Anna' }, incomes: {}, split: { mode: 'custom', pctById: { me: 60, placeholder: 40 } }, budgetMinor: 5000, configAt: '2026-11-01T00:00:00.000Z' } });
+  const data = { settings: { household: mine }, sharedIn: [] };
+  const v = validateShare({ app: 'sallo', kind: 'household', v: 1, from: { id: 'her-real', name: 'Anna' }, txns: [{ id: 'x', date: '2026-11-02', amountMinor: 100 }] });
+  const r = applyShare(data, v);
+  assert.equal(r.ok, true);
+  assert.equal(data.settings.household.partnerId, 'her-real');
+  assert.equal(data.settings.household.config.names['her-real'], 'Anna');
+  assert.equal(data.settings.household.config.split.pctById['her-real'], 40);
+  assert.equal(data.sharedIn.length, 1);
+});
+
+import { dailyBalances, affordCheck } from '../js/calc.js';
+test('can I afford it: yes, tight, no, and the earliest date', () => {
+  const accounts = [{ id: 'a', openingMinor: 100000 }];
+  const planned = [
+    { status: 'planned', kind: 'expense', amountMinor: 60000, date: '2026-11-10', ruleId: null },   // rent
+    { status: 'planned', kind: 'income', amountMinor: 150000, date: '2026-11-25', ruleId: null }]; // pay
+  const data = { accounts, txns: [], planned, workPay: null };
+  const t = '2026-11-01';
+  const d = dailyBalances(data, t, '2026-11-30');
+  assert.equal(d[0].balance, 100000); assert.equal(d.find((x) => x.date === '2026-11-10').balance, 40000); assert.equal(d.at(-1).balance, 190000);
+  assert.equal(affordCheck(data, { price: 20000, date: t, today: t }).verdict, 'yes');
+  assert.equal(affordCheck(data, { price: 38000, date: t, today: t, cushion: 5000 }).verdict, 'tight');
+  const no = affordCheck(data, { price: 70000, date: t, today: t });
+  assert.equal(no.verdict, 'no'); assert.equal(no.shortBy, 30000); assert.equal(no.firstShort, '2026-11-10'); assert.equal(no.earliest, '2026-11-25');
+  // goals set aside are untouched
+  assert.equal(affordCheck(data, { price: 15000, date: t, today: t, allocated: 20000 }).verdict, 'yes');
+  assert.equal(affordCheck(data, { price: 15000, date: t, today: t, allocated: 20000, cushion: 20000 }).verdict, 'tight');
+  // work-day pay counts
+  const wp = { dailyMinor: 10000, weekdays: [1, 2, 3, 4, 5], off: [], extra: [] };
+  assert.equal(affordCheck({ ...data, workPay: wp }, { price: 70000, date: t, today: t }).verdict, 'yes');
+});

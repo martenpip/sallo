@@ -33,6 +33,9 @@ Import can replace everything or combine (newest edit of each item wins).
 - **Bank statement import** (Settings → Backup, import and export): reads a CSV on the device, guesses the columns (comma or semicolon files, comma decimals, separate in/out columns, D/K columns), fills in categories, skips what looks already added, and offers Undo. Tested on made-up files only, not on real bank exports.
 - **Debts and loans**: track what you owe or are owed, record payments, add interest, and see an estimated payoff date. A monthly payment becomes a repeating item in Upcoming. The payoff estimate assumes steady monthly payments and a fixed rate.
 
+- **Couples** (Settings → Couples): each person keeps their own Sallo and ticks expenses or bills as "Shared". Sending the other person a small file (and importing theirs) gives a household total, who paid what, who owes whom, and an optional shared monthly budget. It is manual, not live: there is no server. The file holds only the expenses ticked as shared, plus names, split and budget. Tested with two simulated browsers, not on two real phones.
+- **Can I afford this?**: checks a price against your balance, planned bills and income (and work-day pay) over the next 45 days, leaving goal savings untouched. It is an estimate from what you have planned.
+
 ## Limits
 - Data lives in browser storage: clearing site data or uninstalling the app deletes it. Back up.
 - Reminders are shown inside the app (Upcoming, Overview). A website cannot schedule alerts on its own.

@@ -488,3 +488,5 @@ fieldset { min-width: 0; max-width: 100%; }
 .celebrate { text-align: center; padding: 4px 0 6px; } .celebrate h3 { margin: 6px 0; font-size: 1.25rem; }
 .card.paid-off { opacity: .92; border-left: 4px solid var(--income); }
 @media (prefers-reduced-motion: reduce) { .trophy-badge.pop { animation: none; } }
+.tl-verdict.warn { border-left: 5px solid var(--warn); }
+.owes { display: flex; align-items: center; gap: 8px; margin: 8px 0 4px; } .owes.in b { color: var(--income); } .owes.out b { color: var(--warn); }

@@ -71,6 +71,7 @@ changes['import-file'] = async (input) => {
 
 let pendingEnvelope = null;
 export async function handleImportObject(obj) {
+  if (obj && obj.kind === 'household') { await app.importHousehold?.(obj); return; }
   if (V.isEncryptedBackup(obj)) {
     pendingEnvelope = obj;
     openSheet('Encrypted backup', html`<form data-form="importpass" novalidate>

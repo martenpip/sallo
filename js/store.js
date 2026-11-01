@@ -5,7 +5,7 @@ import { ESSENTIAL_DEFAULTS } from './calc.js';
 import { CURRENCIES } from './money.js';
 
 export const SCHEMA = 1;
-export const COLLS = ['accounts', 'categories', 'txns', 'planned', 'rules', 'goals', 'contribs', 'budgets', 'debts', 'repayments'];
+export const COLLS = ['accounts', 'categories', 'txns', 'planned', 'rules', 'goals', 'contribs', 'budgets', 'debts', 'repayments', 'sharedIn'];
 export const HORIZON_DAYS = 400;
 
 export function uid() {
@@ -15,7 +15,7 @@ export function uid() {
 const nowIso = () => new Date().toISOString();
 
 export const DEFAULT_SETTINGS = () => ({
-  currency: 'EUR', locale: '', weekStart: 1, monthStart: 1, theme: 'system', sound: true, nudges: true, guard: true, wantsLimit: 30, demo: false, pay: null, plan: null, workPay: null, orientation: 'auto',
+  currency: 'EUR', locale: '', weekStart: 1, monthStart: 1, theme: 'system', sound: true, nudges: true, guard: true, wantsLimit: 30, demo: false, pay: null, plan: null, workPay: null, household: null, orientation: 'auto',
   onboarded: false, hideAmounts: false, lastExportAt: null, createdAt: nowIso(),
 });
 
@@ -73,7 +73,7 @@ export class Store {
 
   // ---------- transactions ----------
   addTxn(t) {
-    const rec = this.add('txns', { notes: '', name: '', categoryId: null, toAccountId: null, plannedId: null, ...t });
+    const rec = this.add('txns', { notes: '', name: '', categoryId: null, toAccountId: null, plannedId: null, shared: false, ...t });
     this.commit();
     return rec;
   }
@@ -92,7 +92,7 @@ export class Store {
 
   // ---------- planned items ----------
   addPlanned(p) {
-    const rec = this.add('planned', { time: '', categoryId: null, accountId: null, status: 'planned', ruleId: null, overridden: false, notes: '', txnId: null, amountMinor: 0, ...p });
+    const rec = this.add('planned', { time: '', categoryId: null, accountId: null, status: 'planned', ruleId: null, overridden: false, notes: '', txnId: null, amountMinor: 0, shared: false, ...p });
     this.commit();
     return rec;
   }
@@ -123,7 +123,7 @@ export class Store {
     if (!acc) throw new Error('Add an account first.');
     const t = this.add('txns', {
       type: p.kind, amountMinor: amountMinor ?? p.amountMinor, name: p.name, categoryId: p.categoryId,
-      accountId: acc, toAccountId: null, date: date || this.today(), notes: p.notes || '', plannedId: p.id,
+      accountId: acc, toAccountId: null, date: date || this.today(), notes: p.notes || '', plannedId: p.id, shared: !!p.shared,
     });
     this.update('planned', id, { status: 'done', txnId: t.id });
     this.commit();
@@ -152,7 +152,7 @@ export class Store {
         this.data.planned.push({
           id: uid(), kind: r.kind, name: r.name, amountMinor: r.amountMinor, date: d, time: r.time || '',
           categoryId: r.categoryId || null, accountId: r.accountId || null, status: 'planned', ruleId: r.id,
-          overridden: false, notes: r.notes || '', txnId: null, updatedAt: nowIso(),
+          overridden: false, notes: r.notes || '', txnId: null, shared: !!r.shared, updatedAt: nowIso(),
         });
         changed = true;
       }
@@ -164,7 +164,7 @@ export class Store {
   addRule(r) {
     const t = this.today();
     const rule = this.add('rules', {
-      time: '', categoryId: null, accountId: null, endDate: null, every: 1, paused: false, notes: '',
+      time: '', categoryId: null, accountId: null, endDate: null, every: 1, paused: false, notes: '', shared: false,
       trackFrom: r.startDate >= t ? r.startDate : t, ...r,
     });
     if (r.trackFrom === undefined) rule.trackFrom = r.startDate >= t ? r.startDate : t;
@@ -245,7 +245,7 @@ export class Store {
     const deadRules = new Set(d.rules.filter((r) => last || r.accountId === id).map((r) => r.id));
     d.rules = d.rules.filter((r) => !deadRules.has(r.id));
     d.planned = d.planned.filter((p) => !(last || p.accountId === id || (p.txnId && gone.has(p.txnId)) || (p.ruleId && deadRules.has(p.ruleId))));
-    if (last) { d.goals = []; d.contribs = []; d.budgets = []; d.debts = []; d.repayments = []; d.settings.plan = null; d.settings.demo = false; }
+    if (last) { d.goals = []; d.contribs = []; d.budgets = []; d.debts = []; d.repayments = []; d.sharedIn = []; d.settings.household = null; d.settings.plan = null; d.settings.demo = false; }
     if (d.settings.pay && !d.rules.some((r) => r.id === d.settings.pay.ruleId)) d.settings.pay = null;
     this.remove('accounts', id);
     this.commit();
@@ -315,25 +315,26 @@ const CLEAN = {
     const amt = int(r.amountMinor);
     if (!idOf(r.id) || !type || amt === null || amt < 0 || !isoOr(r.date) || !idOf(r.accountId)) return null;
     if (type === 'transfer' && !idOf(r.toAccountId)) return null;
-    return { id: r.id, type, amountMinor: amt, name: str(r.name), categoryId: idOf(r.categoryId), accountId: r.accountId, toAccountId: type === 'transfer' ? r.toAccountId : null, date: r.date, notes: str(r.notes, 2000), plannedId: idOf(r.plannedId), updatedAt: stamp(r.updatedAt) };
+    return { id: r.id, type, amountMinor: amt, name: str(r.name), categoryId: idOf(r.categoryId), accountId: r.accountId, toAccountId: type === 'transfer' ? r.toAccountId : null, date: r.date, notes: str(r.notes, 2000), plannedId: idOf(r.plannedId), shared: bool(r.shared) && type === 'expense', updatedAt: stamp(r.updatedAt) };
   },
   planned: (r) => {
     const kind = oneOf(r.kind, ['expense', 'income', 'event'], null);
     const amt = int(r.amountMinor) ?? 0;
     if (!idOf(r.id) || !kind || !isoOr(r.date) || !str(r.name) || amt < 0) return null;
-    return { id: r.id, kind, name: str(r.name), amountMinor: amt, date: r.date, time: /^\d{2}:\d{2}$/.test(r.time || '') ? r.time : '', categoryId: idOf(r.categoryId), accountId: idOf(r.accountId), status: oneOf(r.status, ['planned', 'done', 'skipped'], 'planned'), ruleId: idOf(r.ruleId), overridden: bool(r.overridden), notes: str(r.notes, 2000), txnId: idOf(r.txnId), updatedAt: stamp(r.updatedAt) };
+    return { id: r.id, kind, name: str(r.name), amountMinor: amt, date: r.date, time: /^\d{2}:\d{2}$/.test(r.time || '') ? r.time : '', categoryId: idOf(r.categoryId), accountId: idOf(r.accountId), status: oneOf(r.status, ['planned', 'done', 'skipped'], 'planned'), ruleId: idOf(r.ruleId), overridden: bool(r.overridden), notes: str(r.notes, 2000), txnId: idOf(r.txnId), shared: bool(r.shared) && kind === 'expense', updatedAt: stamp(r.updatedAt) };
   },
   rules: (r) => {
     const kind = oneOf(r.kind, ['expense', 'income', 'event'], null);
     const unit = oneOf(r.unit, ['day', 'week', 'month', 'year'], null);
     const every = int(r.every);
     if (!idOf(r.id) || !kind || !unit || !every || every < 1 || every > 999 || !isoOr(r.startDate) || !str(r.name)) return null;
-    return { id: r.id, kind, name: str(r.name), amountMinor: Math.max(0, int(r.amountMinor) ?? 0), categoryId: idOf(r.categoryId), accountId: idOf(r.accountId), time: /^\d{2}:\d{2}$/.test(r.time || '') ? r.time : '', startDate: r.startDate, trackFrom: isoOr(r.trackFrom) || r.startDate, endDate: isoOr(r.endDate), unit, every, paused: bool(r.paused), notes: str(r.notes, 2000), updatedAt: stamp(r.updatedAt) };
+    return { id: r.id, kind, name: str(r.name), amountMinor: Math.max(0, int(r.amountMinor) ?? 0), categoryId: idOf(r.categoryId), accountId: idOf(r.accountId), time: /^\d{2}:\d{2}$/.test(r.time || '') ? r.time : '', startDate: r.startDate, trackFrom: isoOr(r.trackFrom) || r.startDate, endDate: isoOr(r.endDate), unit, every, paused: bool(r.paused), notes: str(r.notes, 2000), shared: bool(r.shared) && kind === 'expense', updatedAt: stamp(r.updatedAt) };
   },
   goals: (r) => (idOf(r.id) && str(r.name) && int(r.targetMinor) > 0 ? { id: r.id, name: str(r.name), targetMinor: r.targetMinor, deadline: isoOr(r.deadline), autoPct: Number.isInteger(r.autoPct) && r.autoPct >= 0 && r.autoPct <= 50 ? r.autoPct : 0, icon: str(r.icon, 20) || 'piggy', archived: bool(r.archived), note: str(r.note, 1000), updatedAt: stamp(r.updatedAt) } : null),
   contribs: (r) => (idOf(r.id) && idOf(r.goalId) && int(r.amountMinor) !== null && isoOr(r.date) ? { id: r.id, goalId: r.goalId, amountMinor: r.amountMinor, date: r.date, note: str(r.note, 500), updatedAt: stamp(r.updatedAt) } : null),
   debts: (r) => (idOf(r.id) && str(r.name) && int(r.startMinor) > 0 ? { id: r.id, name: str(r.name), direction: oneOf(r.direction, ['owe', 'owed'], 'owe'), startMinor: r.startMinor, aprBp: Number.isInteger(r.aprBp) && r.aprBp >= 0 && r.aprBp <= 10000 ? r.aprBp : 0, monthlyMinor: Math.max(0, int(r.monthlyMinor) ?? 0), ruleId: idOf(r.ruleId), accountId: idOf(r.accountId), startDate: isoOr(r.startDate), settledAt: isoOr(r.settledAt), note: str(r.note, 1000), archived: bool(r.archived), updatedAt: stamp(r.updatedAt) } : null),
   repayments: (r) => (idOf(r.id) && idOf(r.debtId) && int(r.amountMinor) && isoOr(r.date) ? { id: r.id, debtId: r.debtId, amountMinor: r.amountMinor, date: r.date, txnId: idOf(r.txnId), note: str(r.note, 500), updatedAt: stamp(r.updatedAt) } : null),
+  sharedIn: (r) => (idOf(r.id) && idOf(r.personId) && int(r.amountMinor) > 0 && isoOr(r.date) ? { id: r.id, personId: r.personId, date: r.date, amountMinor: r.amountMinor, name: str(r.name, 80), categoryName: str(r.categoryName, 60), updatedAt: stamp(r.updatedAt) } : null),
   budgets: (r) => (idOf(r.id) && int(r.limitMinor) > 0 ? { id: r.id, categoryId: typeof r.categoryId === 'string' ? r.categoryId : '', limitMinor: r.limitMinor, updatedAt: stamp(r.updatedAt) } : null),
 };
 
@@ -343,6 +344,19 @@ function cleanWorkPay(w) {
   const off = [...new Set((Array.isArray(w.off) ? w.off : []).filter((x) => isIso(x)))].sort().slice(0, 400);
   const extra = [...new Set((Array.isArray(w.extra) ? w.extra : []).filter((x) => isIso(x)))].sort().slice(0, 800);
   return { dailyMinor: w.dailyMinor, weekdays: weekdays.length || extra.length ? weekdays : [1, 2, 3, 4, 5], off, extra };
+}
+export function cleanHousehold(h) {
+  if (!h || typeof h !== 'object' || !idOf(h.personId) || !idOf(h.partnerId) || h.personId === h.partnerId) return null;
+  const c = h.config && typeof h.config === 'object' ? h.config : {};
+  const ids = [h.personId, h.partnerId];
+  const names = {}, incomes = {}, pctById = {};
+  for (const id of ids) {
+    names[id] = str(c.names?.[id], 40) || (id === h.personId ? 'Me' : 'Partner');
+    const inc = c.incomes?.[id]; incomes[id] = Number.isSafeInteger(inc) && inc > 0 ? inc : 0;
+    const p = c.split?.pctById?.[id]; pctById[id] = Number.isFinite(p) && p >= 0 && p <= 100 ? p : 50;
+  }
+  return { personId: h.personId, partnerId: h.partnerId, partnerLinked: h.partnerLinked !== false, lastImportAt: typeof h.lastImportAt === 'string' ? h.lastImportAt : null, lastExportAt: typeof h.lastExportAt === 'string' ? h.lastExportAt : null,
+    config: { names, incomes, split: { mode: oneOf(c.split?.mode, ['half', 'income', 'custom'], 'half'), pctById }, budgetMinor: Number.isSafeInteger(c.budgetMinor) && c.budgetMinor > 0 ? c.budgetMinor : 0, configAt: stamp(c.configAt) } };
 }
 function cleanPlan(p) {
   if (!p || typeof p !== 'object') return null;
@@ -367,7 +381,7 @@ function cleanSettings(s = {}) {
     theme: oneOf(s.theme, ['system', 'light', 'dark'], 'system'),
     sound: s.sound !== false, nudges: s.nudges !== false, guard: s.guard !== false, demo: s.demo === true, pay: s.pay && typeof s.pay.ruleId === 'string' ? { ruleId: s.pay.ruleId } : null,
     plan: cleanPlan(s.plan),
-    workPay: cleanWorkPay(s.workPay), wantsLimit: [20, 30, 40, 50].includes(s.wantsLimit) ? s.wantsLimit : 30, orientation: oneOf(s.orientation, ['auto', 'portrait'], 'auto'),
+    workPay: cleanWorkPay(s.workPay), household: cleanHousehold(s.household), wantsLimit: [20, 30, 40, 50].includes(s.wantsLimit) ? s.wantsLimit : 30, orientation: oneOf(s.orientation, ['auto', 'portrait'], 'auto'),
     onboarded: true, lastExportAt: typeof s.lastExportAt === 'string' ? s.lastExportAt : null,
     createdAt: stamp(s.createdAt),
   };

@@ -12,7 +12,7 @@ export function txnRow(t, { showDate = false } = {}) {
   const sub = t.type === 'transfer' ? `${acc?.name || '?'} → ${to?.name || '?'}` : [cat?.name, acc?.name].filter(Boolean).join(' · ');
   const ico = t.type === 'transfer' ? 'transfer' : cat?.icon || (t.type === 'income' ? 'cash' : 'tag');
   return html`<div class="row"><button class="row-main" data-act="txn-open" data-id="${t.id}">
-    ${badge(ico)}<span class="row-text"><b>${title}</b><small>${showDate ? dateText(t.date) + (sub ? ' · ' : '') : ''}${sub}</small></span>
+    ${badge(ico)}<span class="row-text"><b>${title}</b><small>${showDate ? dateText(t.date) + (sub ? ' · ' : '') : ''}${sub}${t.shared ? html` ${chip('Shared', 'accent')}` : ''}</small></span>
     <span class="row-amt">${amountSpan(t.amountMinor, t.type)}</span></button></div>`;
 }
 

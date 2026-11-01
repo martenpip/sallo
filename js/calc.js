@@ -394,3 +394,45 @@ export function debtTotals(debts, repayments, planned = []) {
   for (const d of debts) { if (d.archived) continue; const left = debtLeft(d, repayments, planned); if (!left) continue; if (d.direction === 'owed') { owed += left; nOwed++; } else { owe += left; nOwe++; } }
   return { owe, owed, nOwe, nOwed };
 }
+
+// ---------- "Can I afford this?" ----------
+/** Balance at the end of each day from `from` to `to`: bills and planned income on their dates, work-day pay after them. */
+export function dailyBalances({ accounts, txns, planned, workPay, skipRuleId }, from, to) {
+  let bal = totalBalance(accounts, accountBalances(accounts, txns));
+  const net = new Map();
+  for (const p of planned) {
+    if (p.status !== 'planned' || p.kind === 'event' || !p.amountMinor || (skipRuleId && p.ruleId === skipRuleId) || p.date > to) continue;
+    const d = p.date < from ? from : p.date;
+    net.set(d, (net.get(d) || 0) + (p.kind === 'income' ? p.amountMinor : -p.amountMinor));
+  }
+  const out = [];
+  for (let d = from; d <= to; d = addDays(d, 1)) {
+    bal += net.get(d) || 0;
+    if (d > from && isWorkDay(workPay, d)) bal += workPay.dailyMinor;
+    out.push({ date: d, balance: bal });
+  }
+  return out;
+}
+/**
+ * Would a purchase of `price` on `date` leave you OK? Looks 45 days past the purchase, counts planned bills and income
+ * (and work-day pay), and keeps money set aside for goals untouched. `cushion` is a little room that should remain.
+ */
+export function affordCheck(data, { price, date, today: t, allocated = 0, cushion = 0 }) {
+  const HORIZON = 45, SEARCH = 90;
+  const series = dailyBalances(data, t, addDays(t, SEARCH + HORIZON));
+  const safeAfter = (c) => {
+    const end = addDays(c, HORIZON);
+    let min = Infinity;
+    for (const x of series) { if (x.date > end) break; const b = x.date >= c ? x.balance - price : x.balance; if (b < min) min = b; }
+    return min - allocated;
+  };
+  let baseMin = Infinity, baseDay = t;
+  for (const x of series) { if (x.date > addDays(date, HORIZON)) break; if (x.balance < baseMin) { baseMin = x.balance; baseDay = x.date; } }
+  const after = safeAfter(date);
+  const verdict = after >= cushion ? 'yes' : after >= 0 ? 'tight' : 'no';
+  let firstShort = null;
+  if (after < 0) for (const x of series) { if (x.date > addDays(date, HORIZON)) break; if (x.date >= date && x.balance - price - allocated < 0) { firstShort = x.date; break; } }
+  let earliest = null;
+  if (verdict !== 'yes') for (let c = addDays(date, 1); c <= addDays(t, SEARCH); c = addDays(c, 1)) if (safeAfter(c) >= cushion) { earliest = c; break; }
+  return { verdict, lowestAfter: after + allocated, safeAfter: after, lowestNow: baseMin, lowestNowDate: baseDay, firstShort, earliest, shortBy: after < 0 ? -after : 0, cushion };
+}
